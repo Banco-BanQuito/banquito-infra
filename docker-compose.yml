@@ -1,148 +1,496 @@
 version: '3.9'
 
+# ══════════════════════════════════════════════════════════════════════════════
+# BanQuito V2 — Infraestructura Local
+#
+# Levanta: 5 PostgreSQL · 3 MongoDB · RabbitMQ · 2 Kong
+#          9 microservicios · 3 frontends
+#
+# Uso rápido:
+#   docker-compose up -d                        (todo)
+#   docker-compose up -d postgres-core rabbitmq (solo infra)
+#
+# Cada compañero sobreescribe su imagen con:
+#   ACCOUNT_CORE_IMAGE=ghcr.io/banco-banquito/account-core-service:latest \
+#   docker-compose up -d account-core-service
+# ══════════════════════════════════════════════════════════════════════════════
+
 networks:
-  banquito-net:
+  core-net:
     driver: bridge
+    name: banquito-core-net
+  switch-net:
+    driver: bridge
+    name: banquito-switch-net
+
+volumes:
+  postgres-core-data:
+  postgres-accounting-data:
+  postgres-party-data:
+  postgres-file-data:
+  postgres-tariff-data:
+  mongo-routing-data:
+  mongo-file-data:
+  mongo-clearing-data:
+  rabbitmq-data:
 
 services:
 
-  # ── Bases de datos ────────────────────────────────────────────────────────
+# ── POSTGRESQL — CORE ─────────────────────────────────────────────────────────
 
-  mariadb:
-    image: mariadb:10.11
-    container_name: banquito-mariadb
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: banquito_core
-    ports:
-      - "3306:3306"
-    networks:
-      - banquito-net
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: banquito-postgres
+  postgres-core:
+    image: postgres:16
+    container_name: postgres-core
+    restart: unless-stopped
     environment:
       POSTGRES_USER: banquito
-      POSTGRES_PASSWORD: banquito
-      POSTGRES_DB: banquito_switch
+      POSTGRES_PASSWORD: banquito123
+      POSTGRES_DB: accountdb
+      PGPORT: "5433"
+    volumes:
+      - postgres-core-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5433:5433"
     networks:
-      - banquito-net
+      - core-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banquito -d accountdb -p 5433"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
-  # ── Servicios Spring Boot ─────────────────────────────────────────────────
+  postgres-accounting:
+    image: postgres:16
+    container_name: postgres-accounting
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito123
+      POSTGRES_DB: accountingdb
+      PGPORT: "5434"
+    volumes:
+      - postgres-accounting-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5434"
+    networks:
+      - core-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banquito -d accountingdb -p 5434"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgres-party:
+    image: postgres:16
+    container_name: postgres-party
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito123
+      POSTGRES_DB: partydb
+      PGPORT: "5435"
+    volumes:
+      - postgres-party-data:/var/lib/postgresql/data
+    ports:
+      - "5435:5435"
+    networks:
+      - core-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banquito -d partydb -p 5435"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# ── POSTGRESQL — SWITCH ───────────────────────────────────────────────────────
+
+  postgres-file:
+    image: postgres:16
+    container_name: postgres-file
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito123
+      POSTGRES_DB: filedb
+      PGPORT: "5436"
+    volumes:
+      - postgres-file-data:/var/lib/postgresql/data
+    ports:
+      - "5436:5436"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banquito -d filedb -p 5436"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgres-tariff:
+    image: postgres:16
+    container_name: postgres-tariff
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito123
+      POSTGRES_DB: tariffdb
+      PGPORT: "5437"
+    volumes:
+      - postgres-tariff-data:/var/lib/postgresql/data
+    ports:
+      - "5437:5437"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U banquito -d tariffdb -p 5437"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+# ── MONGODB ───────────────────────────────────────────────────────────────────
+
+  mongo-routing:
+    image: mongo:8.0.8
+    container_name: mongo-routing
+    restart: unless-stopped
+    command: mongod --port 27018
+    volumes:
+      - mongo-routing-data:/data/db
+    ports:
+      - "27018:27018"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27018", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  mongo-file:
+    image: mongo:8.0.8
+    container_name: mongo-file
+    restart: unless-stopped
+    command: mongod --port 27019
+    volumes:
+      - mongo-file-data:/data/db
+    ports:
+      - "27019:27019"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27019", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  mongo-clearing:
+    image: mongo:8.0.8
+    container_name: mongo-clearing
+    restart: unless-stopped
+    command: mongod --port 27020
+    volumes:
+      - mongo-clearing-data:/data/db
+    ports:
+      - "27020:27020"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--port", "27020", "--eval", "db.adminCommand('ping').ok", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ── RABBITMQ ──────────────────────────────────────────────────────────────────
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: banquito
+      RABBITMQ_DEFAULT_PASS: banquito123
+      RABBITMQ_DEFAULT_VHOST: banquito
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+# ── KONG API GATEWAY ──────────────────────────────────────────────────────────
+# kong-core está en AMBAS redes para que routing/clearinghouse lo alcancen
+# desde switch-net usando http://kong-core:8000
+
+  kong-core:
+    image: kong:3.6
+    container_name: kong-core
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/core/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    networks:
+      - core-net
+      - switch-net
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  kong-switch:
+    image: kong:3.6
+    container_name: kong-switch
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/switch/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      - "8010:8000"   # proxy accesible en localhost:8010
+      - "8011:8001"   # admin  accesible en localhost:8011
+    networks:
+      - switch-net
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ── MICROSERVICIOS CORE ───────────────────────────────────────────────────────
 
   account-core-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/account-core-service:latest
+    image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
     container_name: account-core-service
+    restart: on-failure
+    environment:
+      DB_URL: jdbc:postgresql://postgres-core:5433/accountdb
+      DB_USER: banquito
+      DB_PASS: banquito123
+      ACCOUNTING_SERVICE_URL: http://accounting-service:8082
+      PARTY_SERVICE_URL: http://party-service:8083
+      CUT_OFF_TIME: "20:00"
+      SERVER_PORT: "8081"
     ports:
       - "8081:8081"
     networks:
-      - banquito-net
+      - core-net
     depends_on:
-      - mariadb
+      postgres-core:
+        condition: service_healthy
 
   accounting-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/accounting-service:latest
+    image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
     container_name: accounting-service
+    restart: on-failure
+    environment:
+      DB_URL: jdbc:postgresql://postgres-accounting:5434/accountingdb
+      DB_USER: banquito
+      DB_PASS: banquito123
+      SERVER_PORT: "8082"
     ports:
       - "8082:8082"
     networks:
-      - banquito-net
+      - core-net
     depends_on:
-      - mariadb
+      postgres-accounting:
+        condition: service_healthy
 
   party-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/party-service:latest
+    image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
     container_name: party-service
+    restart: on-failure
+    environment:
+      DB_URL: jdbc:postgresql://postgres-party:5435/partydb
+      DB_USER: banquito
+      DB_PASS: banquito123
+      SERVER_PORT: "8083"
     ports:
       - "8083:8083"
     networks:
-      - banquito-net
+      - core-net
     depends_on:
-      - mariadb
+      postgres-party:
+        condition: service_healthy
+
+# ── MICROSERVICIOS SWITCH ─────────────────────────────────────────────────────
 
   file-reception-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/file-reception-service:latest
+    image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
     container_name: file-reception-service
+    restart: on-failure
+    environment:
+      DB_URL: jdbc:postgresql://postgres-file:5436/filedb
+      DB_USER: banquito
+      DB_PASS: banquito123
+      MONGODB_URI: mongodb://mongo-file:27019/filedb
+      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
+      ROUTING_QUEUE: payment.lines.queue
+      CUT_OFF_TIME: "18:00"
+      SERVER_PORT: "8084"
     ports:
       - "8084:8084"
     networks:
-      - banquito-net
+      - switch-net
     depends_on:
-      - postgres
+      postgres-file:
+        condition: service_healthy
+      mongo-file:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   routing-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/routing-service:latest
+    image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
     container_name: routing-service
+    restart: on-failure
+    environment:
+      MONGODB_URI: mongodb://mongo-routing:27018/routingdb
+      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
+      INPUT_QUEUE: payment.lines.queue
+      CLEARING_QUEUE: clearing.outbound.queue
+      CORE_GATEWAY_URL: http://kong-core:8000/api/v2
+      TARIFF_SERVICE_URL: http://tariff-service:8086
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      SERVER_PORT: "8085"
     ports:
       - "8085:8085"
     networks:
-      - banquito-net
+      - switch-net
     depends_on:
-      - postgres
+      mongo-routing:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   tariff-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/tariff-service:latest
+    image: ${TARIFF_IMAGE:-ghcr.io/banco-banquito/tariff-service:latest}
     container_name: tariff-service
+    restart: on-failure
+    environment:
+      DB_URL: jdbc:postgresql://postgres-tariff:5437/tariffdb
+      DB_USER: banquito
+      DB_PASS: banquito123
+      SERVER_PORT: "8086"
     ports:
       - "8086:8086"
     networks:
-      - banquito-net
+      - switch-net
     depends_on:
-      - postgres
+      postgres-tariff:
+        condition: service_healthy
 
   clearinghouse-adapter:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/clearinghouse-adapter:latest
+    image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-adapter:latest}
     container_name: clearinghouse-adapter
+    restart: on-failure
+    environment:
+      MONGODB_URI: mongodb://mongo-clearing:27020/clearingdb
+      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
+      CLEARING_QUEUE: clearing.outbound.queue
+      CORE_GATEWAY_URL: http://kong-core:8000/api/v2
+      OUTPUT_PATH: /compensacion/outbound/
+      SERVER_PORT: "8087"
     ports:
       - "8087:8087"
     networks:
-      - banquito-net
+      - switch-net
     depends_on:
-      - postgres
+      mongo-clearing:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
   report-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/report-service:latest
+    image: ${REPORT_IMAGE:-ghcr.io/banco-banquito/report-service:latest}
     container_name: report-service
+    restart: on-failure
+    environment:
+      MONGODB_URI: mongodb://mongo-routing:27018/routingdb
+      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      SERVER_PORT: "8088"
     ports:
       - "8088:8088"
     networks:
-      - banquito-net
+      - switch-net
     depends_on:
-      - mariadb
+      mongo-routing:
+        condition: service_healthy
 
   notification-service:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/notification-service:latest
+    image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
     container_name: notification-service
+    restart: on-failure
+    environment:
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: "587"
+      SMTP_USER: banquito.notificaciones@gmail.com
+      SMTP_PASS: ${SMTP_PASS:-cambiar-por-app-password}
+      SERVER_PORT: "8089"
     ports:
       - "8089:8089"
     networks:
-      - banquito-net
+      - switch-net
 
-  # ── Frontends ─────────────────────────────────────────────────────────────
+# ── FRONTENDS ─────────────────────────────────────────────────────────────────
+# Los frontends sirven archivos estáticos vía Nginx.
+# Las llamadas a la API salen del BROWSER hacia localhost:8000 / localhost:8010.
 
   teller-frontend:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/teller-frontend:latest
+    image: ${TELLER_FRONTEND_IMAGE:-ghcr.io/banco-banquito/teller-frontend:latest}
     container_name: teller-frontend
+    restart: on-failure
     ports:
       - "3001:80"
     networks:
-      - banquito-net
+      - core-net
 
   web-personas-frontend:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/web-personas-frontend:latest
+    image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
     container_name: web-personas-frontend
+    restart: on-failure
     ports:
       - "3002:80"
     networks:
-      - banquito-net
+      - core-net
 
   web-empresas-frontend:
-    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/web-empresas-frontend:latest
+    image: ${WEB_EMPRESAS_IMAGE:-ghcr.io/banco-banquito/web-empresas-frontend:latest}
     container_name: web-empresas-frontend
+    restart: on-failure
     ports:
       - "3003:80"
     networks:
-      - banquito-net
+      - switch-net

@@ -1,0 +1,108 @@
+_format_version: "3.0"
+_transform: true
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Kong Core — Configuración Declarativa
+# Proxy: http://localhost:8000
+# Admin: http://localhost:8001
+#
+# Rutas expuestas:
+#   /api/v2/accounts/**         → account-core-service:8081
+#   /api/v2/payments/batch-*    → account-core-service:8081
+#   /api/v2/accounting/**       → accounting-service:8082
+#   /api/v2/customers/**        → party-service:8083
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── account-core-service ──────────────────────────────────────────────────
+  - name: account-core-service
+    url: http://account-core-service:8081
+    connect_timeout: 10000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+
+      # GET /api/v2/accounts/{id}/balance
+      # GET /api/v2/accounts/{id}/transactions
+      - name: accounts-read
+        paths:
+          - /api/v2/accounts
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false
+
+      # POST /api/v2/accounts/teller/deposit
+      # POST /api/v2/accounts/teller/withdrawal
+      # POST /api/v2/accounts/transfer/p2p
+      - name: accounts-write
+        paths:
+          - /api/v2/accounts
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: false
+
+      # POST /api/v2/payments/batch-credit  (llamado desde Switch vía este Kong)
+      - name: payments-batch-credit
+        paths:
+          - /api/v2/payments/batch-credit
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: false
+
+      # POST /api/v2/payments/corporate-debit (llamado desde Switch vía este Kong)
+      - name: payments-corporate-debit
+        paths:
+          - /api/v2/payments/corporate-debit
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: false
+
+  # ── accounting-service ────────────────────────────────────────────────────
+  - name: accounting-service
+    url: http://accounting-service:8082
+    connect_timeout: 10000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+
+      # POST /api/v2/accounting/entries
+      # POST /api/v2/accounting/eod
+      - name: accounting-write
+        paths:
+          - /api/v2/accounting
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: false
+
+      # GET /api/v2/accounting/trial-balance
+      - name: accounting-read
+        paths:
+          - /api/v2/accounting
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false
+
+  # ── party-service ─────────────────────────────────────────────────────────
+  - name: party-service
+    url: http://party-service:8083
+    connect_timeout: 10000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+
+      # GET /api/v2/customers/{id}
+      # GET /api/v2/customers/by-account/{accountNumber}
+      - name: customers-read
+        paths:
+          - /api/v2/customers
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false

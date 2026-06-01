@@ -1,0 +1,85 @@
+_format_version: "3.0"
+_transform: true
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Kong Switch — Configuración Declarativa
+# Proxy: http://localhost:8010
+# Admin: http://localhost:8011
+#
+# Rutas expuestas:
+#   POST /api/v2/payments/batches              → file-reception-service:8084
+#   GET  /api/v2/payments/batches/{id}/status  → routing-service:8085
+#   GET  /api/v2/payments/batches/{id}/report  → report-service:8088
+#   GET  /api/v2/payments/receipts/{id}        → report-service:8088
+#
+# NO expuestas (solo comunicación interna):
+#   /api/v2/tariff/**
+#   /api/v2/notifications/**
+#   /api/v2/clearing/**
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── file-reception-service ────────────────────────────────────────────────
+  - name: file-reception-service
+    url: http://file-reception-service:8084
+    connect_timeout: 10000
+    write_timeout: 120000
+    read_timeout: 120000
+    routes:
+
+      # POST /api/v2/payments/batches
+      # Carga de archivo de pagos masivos (puede ser un archivo grande)
+      - name: batches-upload
+        paths:
+          - /api/v2/payments/batches
+        methods:
+          - POST
+        strip_path: false
+        preserve_host: false
+
+  # ── routing-service ───────────────────────────────────────────────────────
+  - name: routing-service
+    url: http://routing-service:8085
+    connect_timeout: 10000
+    write_timeout: 30000
+    read_timeout: 30000
+    routes:
+
+      # GET /api/v2/payments/batches/{id}/status
+      # Regex con mayor prioridad que la ruta de report
+      - name: batch-status
+        paths:
+          - ~/api/v2/payments/batches/[^/]+/status$
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false
+        regex_priority: 100
+
+  # ── report-service ────────────────────────────────────────────────────────
+  - name: report-service
+    url: http://report-service:8088
+    connect_timeout: 10000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+
+      # GET /api/v2/payments/batches/{id}/report
+      - name: batch-report
+        paths:
+          - ~/api/v2/payments/batches/[^/]+/report$
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false
+        regex_priority: 100
+
+      # GET /api/v2/payments/receipts/{id}
+      - name: payment-receipts
+        paths:
+          - /api/v2/payments/receipts
+        methods:
+          - GET
+        strip_path: false
+        preserve_host: false
