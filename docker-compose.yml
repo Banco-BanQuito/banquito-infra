@@ -1,0 +1,148 @@
+version: '3.9'
+
+networks:
+  banquito-net:
+    driver: bridge
+
+services:
+
+  # ── Bases de datos ────────────────────────────────────────────────────────
+
+  mariadb:
+    image: mariadb:10.11
+    container_name: banquito-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: banquito_core
+    ports:
+      - "3306:3306"
+    networks:
+      - banquito-net
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: banquito-postgres
+    environment:
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito
+      POSTGRES_DB: banquito_switch
+    ports:
+      - "5432:5432"
+    networks:
+      - banquito-net
+
+  # ── Servicios Spring Boot ─────────────────────────────────────────────────
+
+  account-core-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/account-core-service:latest
+    container_name: account-core-service
+    ports:
+      - "8081:8081"
+    networks:
+      - banquito-net
+    depends_on:
+      - mariadb
+
+  accounting-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/accounting-service:latest
+    container_name: accounting-service
+    ports:
+      - "8082:8082"
+    networks:
+      - banquito-net
+    depends_on:
+      - mariadb
+
+  party-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/party-service:latest
+    container_name: party-service
+    ports:
+      - "8083:8083"
+    networks:
+      - banquito-net
+    depends_on:
+      - mariadb
+
+  file-reception-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/file-reception-service:latest
+    container_name: file-reception-service
+    ports:
+      - "8084:8084"
+    networks:
+      - banquito-net
+    depends_on:
+      - postgres
+
+  routing-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/routing-service:latest
+    container_name: routing-service
+    ports:
+      - "8085:8085"
+    networks:
+      - banquito-net
+    depends_on:
+      - postgres
+
+  tariff-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/tariff-service:latest
+    container_name: tariff-service
+    ports:
+      - "8086:8086"
+    networks:
+      - banquito-net
+    depends_on:
+      - postgres
+
+  clearinghouse-adapter:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/clearinghouse-adapter:latest
+    container_name: clearinghouse-adapter
+    ports:
+      - "8087:8087"
+    networks:
+      - banquito-net
+    depends_on:
+      - postgres
+
+  report-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/report-service:latest
+    container_name: report-service
+    ports:
+      - "8088:8088"
+    networks:
+      - banquito-net
+    depends_on:
+      - mariadb
+
+  notification-service:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/notification-service:latest
+    container_name: notification-service
+    ports:
+      - "8089:8089"
+    networks:
+      - banquito-net
+
+  # ── Frontends ─────────────────────────────────────────────────────────────
+
+  teller-frontend:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/teller-frontend:latest
+    container_name: teller-frontend
+    ports:
+      - "3001:80"
+    networks:
+      - banquito-net
+
+  web-personas-frontend:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/web-personas-frontend:latest
+    container_name: web-personas-frontend
+    ports:
+      - "3002:80"
+    networks:
+      - banquito-net
+
+  web-empresas-frontend:
+    image: us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/banquito-repo/web-empresas-frontend:latest
+    container_name: web-empresas-frontend
+    ports:
+      - "3003:80"
+    networks:
+      - banquito-net
