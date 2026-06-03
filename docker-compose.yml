@@ -46,7 +46,7 @@ services:
       POSTGRES_DB: accountdb           # primera BD — las demás las crea init-postgres.sql
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./db/init-postgres.sql:/docker-entrypoint-initdb.d/init-postgres.sql:ro
+      - ./db:/docker-entrypoint-initdb.d:ro    # ejecuta 01-11 en orden al primer arranque
     ports:
       - "5432:5432"
     networks:
