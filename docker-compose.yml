@@ -48,7 +48,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d:ro    # ejecuta 01-11 en orden al primer arranque
     ports:
-      - "5432:5432"
+      - "5433:5432"
     networks:
       - core-net
       - switch-net                      # Alan y Johan (switch) también usan postgres

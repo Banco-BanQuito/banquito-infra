@@ -1,0 +1,83 @@
+services:
+
+  # ── Servicios con código: se construyen localmente ────────────────────────
+
+  account-core-service:
+    build:
+      context: ../banquito-account-core-service
+
+  accounting-service:
+    build:
+      context: ../banquito-accounting-service
+      dockerfile_inline: |
+        FROM maven:3.9-eclipse-temurin-21 AS builder
+        WORKDIR /app
+        COPY pom.xml .
+        RUN mvn dependency:go-offline -q
+        COPY src ./src
+        RUN mvn package -DskipTests -q
+        FROM eclipse-temurin:21-jre-alpine
+        WORKDIR /app
+        COPY --from=builder /app/target/*.jar app.jar
+        EXPOSE 8082
+        ENTRYPOINT ["java", "-jar", "app.jar"]
+
+  routing-service:
+    build:
+      context: ../banquito-routing-service
+
+  clearinghouse-adapter:
+    build:
+      context: ../banquito-clearinghouse-adapter/banquito-clearinghouse-adapter
+      dockerfile_inline: |
+        FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+        WORKDIR /app
+        COPY pom.xml .
+        RUN mvn dependency:go-offline -q
+        COPY src ./src
+        RUN mvn package -DskipTests -q
+        FROM eclipse-temurin:21-jre-alpine
+        WORKDIR /app
+        COPY --from=builder /app/target/*.jar app.jar
+        EXPOSE 8087
+        ENTRYPOINT ["java", "-jar", "app.jar"]
+
+  tariff-service:
+    build:
+      context: ../banquito-tariff-service/banquito-tariff-service
+      dockerfile_inline: |
+        FROM maven:3.9-eclipse-temurin-21-alpine AS builder
+        WORKDIR /app
+        COPY pom.xml .
+        RUN mvn dependency:go-offline -q
+        COPY src ./src
+        RUN mvn package -DskipTests -q
+        FROM eclipse-temurin:21-jre-alpine
+        WORKDIR /app
+        COPY --from=builder /app/target/*.jar app.jar
+        EXPOSE 8086
+        ENTRYPOINT ["java", "-jar", "app.jar"]
+
+  web-personas-frontend:
+    build:
+      context: ../banquito-web-personas-frontend
+
+  # ── Servicios sin código aún: deshabilitados hasta que suban el código ────
+
+  file-reception-service:
+    profiles: [pending]
+
+  party-service:
+    profiles: [pending]
+
+  notification-service:
+    profiles: [pending]
+
+  report-service:
+    profiles: [pending]
+
+  teller-frontend:
+    profiles: [pending]
+
+  web-empresas-frontend:
+    profiles: [pending]
