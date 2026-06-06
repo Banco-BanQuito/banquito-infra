@@ -254,13 +254,21 @@ services:
     container_name: routing-service
     restart: on-failure
     environment:
-      MONGODB_URI: mongodb://mongo:27017/routingdb
-      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
-      INPUT_QUEUE: payment.lines.queue
-      CLEARING_QUEUE: clearing.outbound.queue
-      CORE_GATEWAY_URL: http://kong-core:8000/api/v2
-      TARIFF_SERVICE_URL: http://tariff-service:8086
-      NOTIFICATION_SERVICE_URL: http://notification-service:8089
+      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/routingdb
+      SPRING_MONGODB_URI: mongodb://mongo:27017/routingdb
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: banquito
+      RABBITMQ_PASSWORD: banquito123
+      SPRING_RABBITMQ_VIRTUAL_HOST: banquito
+      RABBITMQ_QUEUE: payment.lines.queue
+      RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
+      ACCOUNT_CORE_GRPC_HOST: account-core-service
+      ACCOUNT_CORE_GRPC_PORT: "9091"
+      TARIFF_SERVICE_GRPC_HOST: tariff-service
+      TARIFF_SERVICE_GRPC_PORT: "9091"
+      NOTIFICATION_SERVICE_GRPC_HOST: notification-service
+      NOTIFICATION_SERVICE_GRPC_PORT: "9092"
       SERVER_PORT: "8085"
     ports:
       - "8085:8085"
@@ -277,9 +285,9 @@ services:
     container_name: tariff-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/tariffdb
-      DB_USER: banquito
-      DB_PASS: banquito123
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/tariffdb
+      POSTGRES_USER: banquito
+      POSTGRES_PASSWORD: banquito123
       SERVER_PORT: "8086"
     ports:
       - "8086:8086"
@@ -294,11 +302,16 @@ services:
     container_name: clearinghouse-adapter
     restart: on-failure
     environment:
-      MONGODB_URI: mongodb://mongo:27017/clearingdb
-      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
-      CLEARING_QUEUE: clearing.outbound.queue
-      CORE_GATEWAY_URL: http://kong-core:8000/api/v2
-      OUTPUT_PATH: /compensacion/outbound/
+      SPRING_MONGODB_HOST: mongo
+      SPRING_MONGODB_PORT: "27017"
+      SPRING_MONGODB_DATABASE: clearingdb
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: "5672"
+      SPRING_RABBITMQ_USERNAME: banquito
+      SPRING_RABBITMQ_PASSWORD: banquito123
+      SPRING_RABBITMQ_VIRTUAL_HOST: banquito
+      RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
+      CORE_ACCOUNTING_URL: http://accounting-service:8082/api/v2/accounting/entries
       SERVER_PORT: "8087"
     ports:
       - "8087:8087"
