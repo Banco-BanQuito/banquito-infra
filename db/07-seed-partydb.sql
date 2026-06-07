@@ -101,7 +101,7 @@ INSERT INTO web_credential (customer_id, username, password_hash, status)
 SELECT
     n,
     'cliente' || n,
-    '$2a$10$xRXEwH3kDMNhIV3k5XKXB.3oUUQZkzK7pqQ0KSmvn7mF8dXhqHGVe',
+    '$2a$10$.GQNFlPsM3t7yWaC8z6cVOxWyRCJ149WNTYgBtk0779P3RmQX7q6W',
     'ACTIVO'
 FROM generate_series(1, 9000) AS n;
 
@@ -111,6 +111,6 @@ INSERT INTO web_credential (customer_id, username, password_hash, status)
 SELECT
     n,
     'empresa' || (n - 9000),
-    '$2a$10$xRXEwH3kDMNhIV3k5XKXB.3oUUQZkzK7pqQ0KSmvn7mF8dXhqHGVe',
+    '$2a$10$.GQNFlPsM3t7yWaC8z6cVOxWyRCJ149WNTYgBtk0779P3RmQX7q6W',
     'ACTIVO'
 FROM generate_series(9001, 9500) AS n;
