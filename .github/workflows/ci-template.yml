@@ -1,102 +1,15 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# Plantilla CI/CD — Cada compañero copia esto a su repo como:
-#   .github/workflows/ci.yml
-#
-# SOLO HAY QUE CAMBIAR LAS 2 VARIABLES DE LA SECCIÓN "env" DE ABAJO:
-#   SERVICE_NAME → nombre del servicio (ej: account-core-service)
-#   SERVICE_TYPE → "springboot" o "frontend"
-#
-# Secrets que el dueño del repo debe agregar en GitHub:
-#   GCP_SA_KEY     → JSON del Service Account de GCP (Anahy te lo da)
-#   GCP_PROJECT_ID → ID del proyecto GCP (Anahy te lo da)
-# ══════════════════════════════════════════════════════════════════════════════
-
-name: CI/CD Pipeline
+name: Validate Compose
 
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-
-env:
-  # ▼▼▼ CAMBIA SOLO ESTAS DOS LÍNEAS ▼▼▼
-  SERVICE_NAME: account-core-service   # nombre exacto del servicio
-  SERVICE_TYPE: springboot             # "springboot" o "frontend"
-  # ▲▲▲ ──────────────────────────── ▲▲▲
-
-  REGION: us-central1
-  REPO: banquito-repo
 
 jobs:
-
-  # ── Job 1: Build y Test ───────────────────────────────────────────────────
-  build-and-test:
-    name: Build & Test
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # Spring Boot
-      - name: Set up Java 21
-        if: env.SERVICE_TYPE == 'springboot'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Run Maven tests
-        if: env.SERVICE_TYPE == 'springboot'
-        run: mvn test -q
-
-      # Frontend
-      - name: Set up Node.js 18
-        if: env.SERVICE_TYPE == 'frontend'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: npm
-
-      - name: Install & build frontend
-        if: env.SERVICE_TYPE == 'frontend'
+      - name: Validate docker-compose files
         run: |
-          npm ci
-          npm run build
-
-  # ── Job 2: Docker Build & Deploy (solo en push a main) ────────────────────
-  docker-deploy:
-    name: Docker Build & Deploy
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-            -t ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:latest \
-            .
-
-      - name: Push Docker image
-        run: |
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:latest
-
-      - name: Push also to GHCR (para docker-compose local)
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          docker tag \
-            ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.SERVICE_NAME }}:latest \
-            ghcr.io/${{ github.repository_owner }}/${{ env.SERVICE_NAME }}:latest
-          docker push ghcr.io/${{ github.repository_owner }}/${{ env.SERVICE_NAME }}:latest
+          docker compose -f docker-compose.yml -f docker-compose.cloud.yml config --quiet
+          echo "Compose files are valid"
