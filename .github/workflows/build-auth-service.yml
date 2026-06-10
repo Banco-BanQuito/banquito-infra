@@ -1,0 +1,30 @@
+name: Build and Push Auth Service
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'auth/**'
+      - '.github/workflows/build-auth-service.yml'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v5
+        with:
+          context: auth
+          push: true
+          tags: ghcr.io/banco-banquito/auth-service:latest
