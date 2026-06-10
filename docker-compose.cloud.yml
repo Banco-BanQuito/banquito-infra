@@ -1,0 +1,71 @@
+services:
+
+  # ── Reemplaza postgres local con no-op (se usa Cloud SQL) ────────────────────
+  postgres:
+    image: alpine:3.19
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 1
+      start_period: 2s
+    restart: "no"
+
+  # ── Reemplaza mongo local con no-op (se usa MongoDB Atlas) ──────────────────
+  mongo:
+    image: alpine:3.19
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      test: ["CMD", "echo", "ok"]
+      interval: 5s
+      timeout: 3s
+      retries: 1
+      start_period: 2s
+    restart: "no"
+
+  # ── Apunta servicios Core a Cloud SQL PostgreSQL ─────────────────────────────
+  account-core-service:
+    environment:
+      DB_URL: jdbc:postgresql://136.112.87.173:5432/accountdb
+      DB_USER: postgres
+      DB_PASS: "Banquito123*"
+
+  accounting-service:
+    environment:
+      DB_URL: jdbc:postgresql://136.112.87.173:5432/accountingdb
+      DB_USER: postgres
+      DB_PASS: "Banquito123*"
+
+  party-service:
+    environment:
+      DB_URL: jdbc:postgresql://136.112.87.173:5432/partydb
+      DB_USER: postgres
+      DB_PASS: "Banquito123*"
+
+  # ── Apunta servicios Switch a Cloud SQL + MongoDB Atlas ──────────────────────
+  file-reception-service:
+    environment:
+      DB_URL: jdbc:postgresql://136.112.87.173:5432/filedb
+      DB_USER: postgres
+      DB_PASS: "Banquito123*"
+      MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/filedb"
+
+  routing-service:
+    environment:
+      SPRING_DATA_MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/routingdb"
+      SPRING_MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/routingdb"
+
+  tariff-service:
+    environment:
+      POSTGRES_URL: jdbc:postgresql://136.112.87.173:5432/tariffdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "Banquito123*"
+
+  clearinghouse-adapter:
+    environment:
+      SPRING_DATA_MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/clearingdb"
+
+  report-service:
+    environment:
+      MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/routingdb"
