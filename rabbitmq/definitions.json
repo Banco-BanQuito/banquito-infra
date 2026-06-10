@@ -1,0 +1,53 @@
+{
+  "vhosts": [
+    {"name": "/"},
+    {"name": "banquito"}
+  ],
+  "users": [
+    {
+      "name": "banquito",
+      "password_hash": "U3VejOx/Hjgq6Vsj9lqBR2IhO0rUW0K/QWezq4zY4vB7S0l0",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "permissions": [
+    {
+      "user": "banquito",
+      "vhost": "/",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    },
+    {
+      "user": "banquito",
+      "vhost": "banquito",
+      "configure": ".*",
+      "write": ".*",
+      "read": ".*"
+    }
+  ],
+  "queues": [
+    {
+      "name": "payment.lines.queue",
+      "vhost": "banquito",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "clearing.outbound.queue",
+      "vhost": "banquito",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "clearing-query-queue",
+      "vhost": "banquito",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    }
+  ]
+}

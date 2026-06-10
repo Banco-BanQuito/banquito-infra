@@ -95,6 +95,8 @@ services:
       RABBITMQ_DEFAULT_VHOST: banquito
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - "5672:5672"
       - "15672:15672"                   # Management UI: http://localhost:15672
@@ -214,6 +216,8 @@ services:
       DB_USER: banquito
       DB_PASS: banquito123
       SERVER_PORT: "8083"
+      ACCOUNT_CORE_GRPC_HOST: account-core-service
+      ACCOUNT_CORE_GRPC_PORT: "9091"
     ports:
       - "8083:8083"
     networks:
@@ -263,8 +267,8 @@ services:
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
       RABBITMQ_QUEUE: payment.lines.queue
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      ACCOUNT_CORE_GRPC_HOST: account-core-service
-      ACCOUNT_CORE_GRPC_PORT: "9091"
+      ACCOUNT_CORE_GRPC_HOST: kong-core
+      ACCOUNT_CORE_GRPC_PORT: "8000"
       TARIFF_SERVICE_GRPC_HOST: tariff-service
       TARIFF_SERVICE_GRPC_PORT: "9091"
       NOTIFICATION_SERVICE_GRPC_HOST: notification-service
@@ -311,7 +315,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: banquito123
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      CORE_ACCOUNTING_URL: http://accounting-service:8082/api/v2/accounting/entries
+      ACCOUNTING_SERVICE_URL: http://accounting-service:8082/api/v2/accounting/entries
       SERVER_PORT: "8087"
     ports:
       - "8087:8087"
@@ -352,6 +356,22 @@ services:
     ports:
       - "8089:8089"
     networks:
+      - switch-net
+
+# ── AUTH SERVICE (simulación de microservicio de autenticación) ───────────────
+# Emite JWT firmados con HS256. Kong valida cada token sin llamar de vuelta a este servicio.
+# POST http://localhost:8000/api/v2/auth/login  (vía Kong Core)
+# POST http://localhost:8010/api/v2/auth/login  (vía Kong Switch)
+# Usuarios: admin/admin123 · teller/teller123 · empresa1/empresa123 · cliente1/cliente123
+
+  auth-service:
+    image: ${AUTH_IMAGE:-banquito/auth-service:local}
+    container_name: auth-service
+    restart: on-failure
+    ports:
+      - "8090:8090"
+    networks:
+      - core-net
       - switch-net
 
 # ── FRONTENDS ─────────────────────────────────────────────────────────────────

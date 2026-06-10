@@ -1,6 +1,6 @@
 services:
 
-  # ── Servicios con código: se construyen localmente ────────────────────────
+  # ── Servicios que se construyen desde código local ────────────────────────
 
   account-core-service:
     build:
@@ -35,6 +35,7 @@ services:
         COPY pom.xml .
         RUN mvn dependency:go-offline -q
         COPY src ./src
+        RUN sed -i '/^spring\.jackson\./d' src/main/resources/application.properties
         RUN mvn package -DskipTests -q
         FROM eclipse-temurin:21-jre-alpine
         WORKDIR /app
@@ -58,26 +59,47 @@ services:
         EXPOSE 8086
         ENTRYPOINT ["java", "-jar", "app.jar"]
 
+  party-service:
+    build:
+      context: ../banquito-party-service
+      dockerfile_inline: |
+        FROM maven:3.9-eclipse-temurin-21 AS builder
+        WORKDIR /app
+        COPY pom.xml .
+        RUN mvn dependency:go-offline -q
+        COPY src ./src
+        RUN mvn package -DskipTests -q
+        FROM eclipse-temurin:21-jre-alpine
+        WORKDIR /app
+        COPY --from=builder /app/target/*.jar app.jar
+        EXPOSE 8083
+        ENTRYPOINT ["java", "-jar", "app.jar"]
+
+  file-reception-service:
+    build:
+      context: ../banquito-file-reception-service
+
+  notification-service:
+    build:
+      context: ../banquito-notification-service
+
+  report-service:
+    build:
+      context: ../banquito-report-service
+
+  teller-frontend:
+    build:
+      context: ../banquito-teller-frontend
+
+  web-empresas-frontend:
+    build:
+      context: ../banquito-web-empresas-frontend
+
   web-personas-frontend:
     build:
       context: ../banquito-web-personas-frontend
 
-  # ── Servicios sin código aún: deshabilitados hasta que suban el código ────
-
-  file-reception-service:
-    profiles: [pending]
-
-  party-service:
-    profiles: [pending]
-
-  notification-service:
-    profiles: [pending]
-
-  report-service:
-    profiles: [pending]
-
-  teller-frontend:
-    profiles: [pending]
-
-  web-empresas-frontend:
-    profiles: [pending]
+  # ── Auth service: construido desde infra/auth ─────────────────────────────
+  auth-service:
+    build:
+      context: ./auth

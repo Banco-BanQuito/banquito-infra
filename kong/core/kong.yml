@@ -7,13 +7,39 @@ _transform: true
 # Admin: http://localhost:8001
 #
 # Rutas expuestas:
-#   /api/v2/accounts/**         → account-core-service:8081
-#   /api/v2/payments/batch-*    → account-core-service:8081
-#   /api/v2/accounting/**       → accounting-service:8082
-#   /api/v2/customers/**        → party-service:8083
+#   POST /api/v2/auth/login         → auth-service:8090   (PÚBLICA — sin JWT)
+#   /api/v2/accounts/**             → account-core-service:8081  (requiere JWT)
+#   /api/v2/payments/batch-*        → account-core-service:8081  (requiere JWT)
+#   /api/v2/accounting/**           → accounting-service:8082    (requiere JWT)
+#   /api/v2/customers/**            → party-service:8083         (requiere JWT)
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── Consumidor JWT — la clave debe coincidir con el claim "iss" del token ─────
+# El auth-service firma tokens con: iss="banquito", secret="banquito-jwt-secret-2024"
+consumers:
+  - username: banquito-app
+    jwt_secrets:
+      - key: banquito
+        secret: banquito-jwt-secret-2024
+        algorithm: HS256
+
 services:
+
+  # ── auth-service (RUTA PÚBLICA — sin plugin JWT) ──────────────────────────
+  - name: auth-service
+    url: http://auth-service:8090
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    routes:
+      - name: auth-login
+        paths:
+          - /api/v2/auth/login
+        methods:
+          - POST
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
 
   # ── account-core-service ──────────────────────────────────────────────────
   - name: account-core-service
@@ -21,6 +47,11 @@ services:
     connect_timeout: 10000
     write_timeout: 60000
     read_timeout: 60000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # GET /api/v2/accounts/{id}/balance
@@ -68,6 +99,11 @@ services:
     connect_timeout: 10000
     write_timeout: 60000
     read_timeout: 60000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # POST /api/v2/accounting/entries
@@ -89,12 +125,33 @@ services:
         strip_path: false
         preserve_host: false
 
+  # ── account-core-service (gRPC) — usado por routing-service vía Kong ─────
+  # routing-service (switch-net) → kong-core:8000 (gRPC) → account-core:9091 (core-net)
+  # Esto garantiza que Switch→Core pase por el API Gateway (requisito arquitectónico)
+  - name: account-core-grpc
+    protocol: grpc
+    host: account-core-service
+    port: 9091
+    connect_timeout: 10000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+      - name: grpc-account-core
+        protocols: [grpc]
+        paths:
+          - /com.banquito.core.account.AccountCoreService
+
   # ── party-service ─────────────────────────────────────────────────────────
   - name: party-service
     url: http://party-service:8083
     connect_timeout: 10000
     write_timeout: 30000
     read_timeout: 30000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # GET /api/v2/customers/{id}

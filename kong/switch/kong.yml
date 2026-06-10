@@ -7,10 +7,11 @@ _transform: true
 # Admin: http://localhost:8011
 #
 # Rutas expuestas:
-#   POST /api/v2/payments/batches              → file-reception-service:8084
-#   GET  /api/v2/payments/batches/{id}/status  → routing-service:8085
-#   GET  /api/v2/payments/batches/{id}/report  → report-service:8088
-#   GET  /api/v2/payments/receipts/{id}        → report-service:8088
+#   POST /api/v2/auth/login                    → auth-service:8090        (PÚBLICA — sin JWT)
+#   POST /api/v2/payments/batches              → file-reception-service:8084  (requiere JWT)
+#   GET  /api/v2/payments/batches/{id}/status  → routing-service:8085         (requiere JWT)
+#   GET  /api/v2/payments/batches/{id}/report  → report-service:8088          (requiere JWT)
+#   GET  /api/v2/payments/receipts/{id}        → report-service:8088          (requiere JWT)
 #
 # NO expuestas (solo comunicación interna):
 #   /api/v2/tariff/**
@@ -18,7 +19,42 @@ _transform: true
 #   /api/v2/clearing/**
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── Consumidor JWT — mismo secreto que Kong Core ──────────────────────────────
+consumers:
+  - username: banquito-app
+    jwt_secrets:
+      - key: banquito
+        secret: banquito-jwt-secret-2024
+        algorithm: HS256
+
+plugins:
+
+  # RF-05: Rate limiting global en Kong Switch
+  # Límite por IP: 100 req/min para batch upload, 300 req/min para consultas
+  - name: rate-limiting
+    config:
+      minute: 100
+      limit_by: ip
+      policy: local
+      hide_client_headers: false
+
 services:
+
+  # ── auth-service (RUTA PÚBLICA — sin plugin JWT) ──────────────────────────
+  - name: auth-service
+    url: http://auth-service:8090
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    routes:
+      - name: auth-login-switch
+        paths:
+          - /api/v2/auth/login
+        methods:
+          - POST
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
 
   # ── file-reception-service ────────────────────────────────────────────────
   - name: file-reception-service
@@ -26,6 +62,11 @@ services:
     connect_timeout: 10000
     write_timeout: 120000
     read_timeout: 120000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # POST /api/v2/payments/batches
@@ -44,6 +85,11 @@ services:
     connect_timeout: 10000
     write_timeout: 30000
     read_timeout: 30000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # GET /api/v2/payments/batches/{id}/status
@@ -63,6 +109,11 @@ services:
     connect_timeout: 10000
     write_timeout: 60000
     read_timeout: 60000
+    plugins:
+      - name: jwt
+        config:
+          key_claim_name: iss
+          secret_is_base64: false
     routes:
 
       # GET /api/v2/payments/batches/{id}/report
