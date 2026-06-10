@@ -1,16 +1,15 @@
 version: '3.9'
 
 # ══════════════════════════════════════════════════════════════════════════════
-# BanQuito V2 — Infraestructura Local
+# BanQuito V2 — Infraestructura
 #
-# UN solo PostgreSQL (puerto 5432) con 5 bases de datos adentro
-# UN solo MongoDB    (puerto 27017) con 4 bases de datos adentro
+# Bases de datos: Cloud SQL (PostgreSQL) y MongoDB Atlas  → env vars en .env
+# Broker:         RabbitMQ                                → contenedor Docker
 #
-# Comandos útiles:
-#   docker-compose up -d                          → levanta TODO
-#   docker-compose up -d postgres mongo rabbitmq  → solo infraestructura (para desarrollar localmente)
-#   docker-compose down                           → apaga (preserva datos)
-#   docker-compose down -v                        → apaga y borra todos los datos
+# Comandos:
+#   cp .env.example .env        → llena con credenciales reales
+#   docker compose up -d        → levanta todo
+#   docker compose down         → apaga (sin borrar datos)
 # ══════════════════════════════════════════════════════════════════════════════
 
 networks:
@@ -22,66 +21,9 @@ networks:
     name: banquito-switch-net
 
 volumes:
-  postgres-data:
-  mongo-data:
   rabbitmq-data:
 
 services:
-
-# ── POSTGRESQL — una instancia, múltiples bases de datos ──────────────────────
-# Bases de datos que crea automáticamente al arrancar (via db/init-postgres.sql):
-#   accountdb    → Oscar  (account-core-service)
-#   accountingdb → Bryan  (accounting-service)
-#   partydb      → Santiago (party-service)
-#   filedb       → Alan   (file-reception-service)
-#   tariffdb     → Johan  (tariff-service)
-
-  postgres:
-    image: postgres:16
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: banquito
-      POSTGRES_PASSWORD: banquito123
-      POSTGRES_DB: accountdb           # primera BD — las demás las crea init-postgres.sql
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-      - ./db:/docker-entrypoint-initdb.d:ro    # ejecuta 01-11 en orden al primer arranque
-    ports:
-      - "5433:5432"
-    networks:
-      - core-net
-      - switch-net                      # Alan y Johan (switch) también usan postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U banquito -p 5432"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
-
-# ── MONGODB — una instancia, múltiples bases de datos ─────────────────────────
-# Las bases de datos se crean solas cuando cada micro arranca por primera vez:
-#   routingdb   → Paul    (routing-service)
-#   filedb      → Alan    (file-reception-service)
-#   clearingdb  → Johan   (clearinghouse-adapter)
-#   reportdb    → Anthony (report-service)
-
-  mongo:
-    image: mongo:8.0.8
-    container_name: mongo
-    restart: unless-stopped
-    volumes:
-      - mongo-data:/data/db
-    ports:
-      - "27017:27017"
-    networks:
-      - switch-net
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping').ok", "--quiet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
 
 # ── RABBITMQ ──────────────────────────────────────────────────────────────────
 
@@ -91,7 +33,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: banquito
-      RABBITMQ_DEFAULT_PASS: banquito123
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_PASS}"
       RABBITMQ_DEFAULT_VHOST: banquito
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
@@ -99,7 +41,7 @@ services:
       - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
     ports:
       - "5672:5672"
-      - "15672:15672"                   # Management UI: http://localhost:15672
+      - "15672:15672"
     networks:
       - switch-net
     healthcheck:
@@ -110,8 +52,6 @@ services:
       start_period: 30s
 
 # ── KONG API GATEWAY ──────────────────────────────────────────────────────────
-# kong-core está en AMBAS redes: core-net y switch-net
-# → Permite que routing-service y clearinghouse lo alcancen con http://kong-core:8000
 
   kong-core:
     image: kong:3.6
@@ -129,8 +69,8 @@ services:
     volumes:
       - ./kong/core/kong.yml:/kong/declarative/kong.yml:ro
     ports:
-      - "8000:8000"                     # Proxy: http://localhost:8000
-      - "8001:8001"                     # Admin:  http://localhost:8001
+      - "8000:8000"
+      - "8001:8001"
     networks:
       - core-net
       - switch-net
@@ -157,8 +97,8 @@ services:
     volumes:
       - ./kong/switch/kong.yml:/kong/declarative/kong.yml:ro
     ports:
-      - "8010:8000"                     # Proxy: http://localhost:8010
-      - "8011:8001"                     # Admin:  http://localhost:8011
+      - "8010:8000"
+      - "8011:8001"
     networks:
       - switch-net
     healthcheck:
@@ -175,56 +115,53 @@ services:
     container_name: account-core-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/accountdb
-      DB_USER: banquito
-      DB_PASS: banquito123
+      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/accountdb
+      DB_USER: ${CLOUD_DB_USER}
+      DB_PASS: ${CLOUD_DB_PASS}
       ACCOUNTING_SERVICE_URL: http://accounting-service:8082
       PARTY_SERVICE_URL: http://party-service:8083
       CUT_OFF_TIME: "20:00"
       SERVER_PORT: "8081"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8081:8081"
     networks:
       - core-net
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   accounting-service:
     image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
     container_name: accounting-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/accountingdb
-      DB_USER: banquito
-      DB_PASS: banquito123
+      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/accountingdb
+      DB_USER: ${CLOUD_DB_USER}
+      DB_PASS: ${CLOUD_DB_PASS}
       SERVER_PORT: "8082"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8082:8082"
     networks:
       - core-net
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   party-service:
     image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
     container_name: party-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/partydb
-      DB_USER: banquito
-      DB_PASS: banquito123
+      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/partydb
+      DB_USER: ${CLOUD_DB_USER}
+      DB_PASS: ${CLOUD_DB_PASS}
       SERVER_PORT: "8083"
       ACCOUNT_CORE_GRPC_HOST: account-core-service
       ACCOUNT_CORE_GRPC_PORT: "9091"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8083:8083"
     networks:
       - core-net
-    depends_on:
-      postgres:
-        condition: service_healthy
 
 # ── MICROSERVICIOS SWITCH ─────────────────────────────────────────────────────
 
@@ -233,23 +170,27 @@ services:
     container_name: file-reception-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/filedb
-      DB_USER: banquito
-      DB_PASS: banquito123
-      MONGODB_URI: mongodb://mongo:27017/filedb
-      RABBITMQ_URL: amqp://banquito:banquito123@rabbitmq:5672/banquito
+      POSTGRES_HOST: "${CLOUD_SQL_HOST}"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "filedb"
+      POSTGRES_USER: "${CLOUD_DB_USER}"
+      POSTGRES_PASSWORD: "${CLOUD_DB_PASS}"
+      MONGO_URI: "mongodb+srv://${MONGO_ATLAS_URL}/filedb"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "banquito"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
+      RABBITMQ_VHOST: "banquito"
       ROUTING_QUEUE: payment.lines.queue
       CUT_OFF_TIME: "18:00"
       SERVER_PORT: "8084"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8084:8084"
     networks:
       - switch-net
     depends_on:
-      postgres:
-        condition: service_healthy
-      mongo:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
@@ -258,12 +199,12 @@ services:
     container_name: routing-service
     restart: on-failure
     environment:
-      SPRING_DATA_MONGODB_URI: mongodb://mongo:27017/routingdb
-      SPRING_MONGODB_URI: mongodb://mongo:27017/routingdb
+      SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/routingdb"
+      SPRING_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/routingdb"
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: banquito
-      RABBITMQ_PASSWORD: banquito123
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
       RABBITMQ_QUEUE: payment.lines.queue
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
@@ -279,8 +220,6 @@ services:
     networks:
       - switch-net
     depends_on:
-      mongo:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
@@ -289,30 +228,27 @@ services:
     container_name: tariff-service
     restart: on-failure
     environment:
-      POSTGRES_URL: jdbc:postgresql://postgres:5432/tariffdb
-      POSTGRES_USER: banquito
-      POSTGRES_PASSWORD: banquito123
+      POSTGRES_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/tariffdb
+      POSTGRES_USER: ${CLOUD_DB_USER}
+      POSTGRES_PASSWORD: ${CLOUD_DB_PASS}
       SERVER_PORT: "8086"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8086:8086"
     networks:
       - switch-net
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   clearinghouse-adapter:
     image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-adapter:latest}
     container_name: clearinghouse-adapter
     restart: on-failure
     environment:
-      SPRING_MONGODB_HOST: mongo
-      SPRING_MONGODB_PORT: "27017"
-      SPRING_MONGODB_DATABASE: clearingdb
+      SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/clearingdb"
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: "5672"
       SPRING_RABBITMQ_USERNAME: banquito
-      SPRING_RABBITMQ_PASSWORD: banquito123
+      SPRING_RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
       ACCOUNTING_SERVICE_URL: http://accounting-service:8082/api/v2/accounting/entries
@@ -322,8 +258,6 @@ services:
     networks:
       - switch-net
     depends_on:
-      mongo:
-        condition: service_healthy
       rabbitmq:
         condition: service_healthy
 
@@ -332,16 +266,13 @@ services:
     container_name: report-service
     restart: on-failure
     environment:
-      MONGODB_URI: mongodb://mongo:27017/routingdb    # lee la BD de Paul, solo lectura
+      MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/routingdb"
       NOTIFICATION_SERVICE_URL: http://notification-service:8089
       SERVER_PORT: "8088"
     ports:
       - "8088:8088"
     networks:
       - switch-net
-    depends_on:
-      mongo:
-        condition: service_healthy
 
   notification-service:
     image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
@@ -351,23 +282,63 @@ services:
       SMTP_HOST: smtp.gmail.com
       SMTP_PORT: "587"
       SMTP_USER: banquito.notificaciones@gmail.com
-      SMTP_PASS: ${SMTP_PASS:-cambiar-por-app-password}
+      SMTP_PASS: "${SMTP_PASS}"
       SERVER_PORT: "8089"
     ports:
       - "8089:8089"
     networks:
       - switch-net
 
-# ── AUTH SERVICE (simulación de microservicio de autenticación) ───────────────
-# Emite JWT firmados con HS256. Kong valida cada token sin llamar de vuelta a este servicio.
-# POST http://localhost:8000/api/v2/auth/login  (vía Kong Core)
-# POST http://localhost:8010/api/v2/auth/login  (vía Kong Switch)
-# Usuarios: admin/admin123 · teller/teller123 · empresa1/empresa123 · cliente1/cliente123
+# ── GRUPO 1 — Core + Switch ───────────────────────────────────────────────────
+
+  grupo1-core:
+    image: ${GRUPO1_CORE_IMAGE:-ghcr.io/banco-banquito/grupo1-core:latest}
+    container_name: grupo1-core
+    restart: on-failure
+    environment:
+      CORE_PORT: "8091"
+      DB_URL: "jdbc:mariadb://${MYSQL_HOST}:${MYSQL_PORT:-3306}/banquito_core?serverTimezone=America/Guayaquil&useSSL=false&allowPublicKeyRetrieval=true"
+      DB_USERNAME: "${MYSQL_USER}"
+      DB_PASSWORD: "${MYSQL_PASS}"
+    ports:
+      - "8091:8091"
+    networks:
+      - core-net
+      - switch-net
+
+  grupo1-switch:
+    image: ${GRUPO1_SWITCH_IMAGE:-ghcr.io/banco-banquito/grupo1-switch:latest}
+    container_name: grupo1-switch
+    restart: on-failure
+    environment:
+      SERVER_PORT: "8092"
+      DB_HOST: "${CLOUD_SQL_HOST}"
+      DB_PORT: "5432"
+      DB_NAME: "switch_pagos"
+      DB_USER: "${CLOUD_DB_USER}"
+      DB_PASSWORD: "${CLOUD_DB_PASS}"
+      APP_CORE_BASE_URL: "http://grupo1-core:8091"
+    ports:
+      - "8092:8092"
+    networks:
+      - switch-net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+# ── AUTH SERVICE ──────────────────────────────────────────────────────────────
 
   auth-service:
-    image: ${AUTH_IMAGE:-banquito/auth-service:local}
+    image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
     container_name: auth-service
     restart: on-failure
+    environment:
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISS: "${JWT_ISS:-banquito}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      TELLER_PASSWORD: "${TELLER_PASSWORD}"
+      EMPRESA_PASSWORD: "${EMPRESA_PASSWORD}"
+      CLIENTE_PASSWORD: "${CLIENTE_PASSWORD}"
     ports:
       - "8090:8090"
     networks:
@@ -402,3 +373,18 @@ services:
       - "3003:80"
     networks:
       - switch-net
+
+# ── WATCHTOWER — auto-pull de nuevas imágenes ─────────────────────────────────
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    environment:
+      DOCKER_API_VERSION: "1.45"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/anahyyherrera/.docker/config.json:/config.json:ro
+    command: --interval 60 --cleanup
+    networks:
+      - core-net

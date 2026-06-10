@@ -20,6 +20,7 @@ CREATE TABLE transaction_subtype (
     id            SERIAL PRIMARY KEY,
     code          VARCHAR(20)  NOT NULL UNIQUE,
     name          VARCHAR(100) NOT NULL,
+    status        VARCHAR(15)  NOT NULL DEFAULT 'ACTIVO',
     creation_date TIMESTAMP    NOT NULL DEFAULT NOW(),
     version       INT          NOT NULL DEFAULT 1
 );

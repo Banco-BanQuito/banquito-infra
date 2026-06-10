@@ -2,16 +2,18 @@
 const http = require('http');
 const crypto = require('crypto');
 
-const JWT_SECRET = 'banquito-jwt-secret-2024';
-const JWT_ISS = 'banquito';
+const JWT_SECRET = process.env.JWT_SECRET || 'banquito-jwt-secret-2024';
+const JWT_ISS    = process.env.JWT_ISS    || 'banquito';
 
-// Usuarios simulados — rol determina acceso en los frontends
-const USERS = {
-  admin:    { password: 'admin123',   role: 'admin' },
-  teller:   { password: 'teller123',  role: 'teller' },
-  empresa1: { password: 'empresa123', role: 'empresa' },
-  cliente1: { password: 'cliente123', role: 'cliente' },
-};
+// Usuarios cargados desde variable de entorno AUTH_USERS (JSON) o defaults de demo
+const USERS = process.env.AUTH_USERS
+  ? JSON.parse(process.env.AUTH_USERS)
+  : {
+      admin:    { password: process.env.ADMIN_PASSWORD    || 'admin123',   role: 'admin' },
+      teller:   { password: process.env.TELLER_PASSWORD   || 'teller123',  role: 'teller' },
+      empresa1: { password: process.env.EMPRESA_PASSWORD  || 'empresa123', role: 'empresa' },
+      cliente1: { password: process.env.CLIENTE_PASSWORD  || 'cliente123', role: 'cliente' },
+    };
 
 function b64url(obj) {
   return Buffer.from(JSON.stringify(obj)).toString('base64url');
@@ -19,7 +21,7 @@ function b64url(obj) {
 
 function signJWT(sub, role) {
   const now = Math.floor(Date.now() / 1000);
-  const header = b64url({ alg: 'HS256', typ: 'JWT' });
+  const header  = b64url({ alg: 'HS256', typ: 'JWT' });
   const payload = b64url({ iss: JWT_ISS, sub, role, iat: now, exp: now + 3600 });
   const sig = crypto
     .createHmac('sha256', JWT_SECRET)
@@ -79,5 +81,5 @@ const server = http.createServer((req, res) => {
 
 server.listen(8090, () => {
   console.log('[auth-service] Puerto 8090');
-  console.log('[auth-service] Usuarios: admin / teller / empresa1 / cliente1');
+  console.log('[auth-service] Usuarios: ' + Object.keys(USERS).join(' / '));
 });

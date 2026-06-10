@@ -1,0 +1,7 @@
+# Variables de entorno con credenciales reales — NUNCA commitear
+.env
+*.env.local
+*.env.production
+
+# Artefactos de Docker
+.docker/
