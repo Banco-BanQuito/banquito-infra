@@ -30,18 +30,24 @@ services:
       DB_URL: jdbc:postgresql://136.112.87.173:5432/accountdb
       DB_USER: postgres
       DB_PASS: "Banquito123*"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
 
   accounting-service:
     environment:
       DB_URL: jdbc:postgresql://136.112.87.173:5432/accountingdb
       DB_USER: postgres
       DB_PASS: "Banquito123*"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
 
   party-service:
     environment:
       DB_URL: jdbc:postgresql://136.112.87.173:5432/partydb
       DB_USER: postgres
       DB_PASS: "Banquito123*"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
 
   # ── Apunta servicios Switch a Cloud SQL + MongoDB Atlas ──────────────────────
   file-reception-service:
@@ -51,6 +57,8 @@ services:
       POSTGRES_DB: "filedb"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "Banquito123*"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
       MONGO_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/filedb"
       RABBITMQ_HOST: "rabbitmq"
       RABBITMQ_PORT: "5672"
@@ -68,6 +76,8 @@ services:
       POSTGRES_URL: jdbc:postgresql://136.112.87.173:5432/tariffdb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: "Banquito123*"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
 
   clearinghouse-adapter:
     environment:
