@@ -46,10 +46,17 @@ services:
   # ── Apunta servicios Switch a Cloud SQL + MongoDB Atlas ──────────────────────
   file-reception-service:
     environment:
-      DB_URL: jdbc:postgresql://136.112.87.173:5432/filedb
-      DB_USER: postgres
-      DB_PASS: "Banquito123*"
-      MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/filedb"
+      POSTGRES_HOST: "136.112.87.173"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "filedb"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "Banquito123*"
+      MONGO_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/filedb"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "banquito"
+      RABBITMQ_PASSWORD: "banquito123"
+      RABBITMQ_VHOST: "banquito"
 
   routing-service:
     environment:
