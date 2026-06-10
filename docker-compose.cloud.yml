@@ -69,3 +69,15 @@ services:
   report-service:
     environment:
       MONGODB_URI: "mongodb+srv://banquito:Banquito123%2A@banquito-cluster.ffdlgoy.mongodb.net/routingdb"
+
+  # ── Watchtower — auto-actualiza contenedores cuando hay nuevas imágenes ───────
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /home/anahyyherrera/.docker/config.json:/config.json:ro
+    command: --interval 60 --cleanup
+    networks:
+      - core-net
