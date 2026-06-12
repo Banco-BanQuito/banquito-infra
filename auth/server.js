@@ -2,17 +2,23 @@
 const http = require('http');
 const crypto = require('crypto');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'banquito-jwt-secret-2024';
-const JWT_ISS    = process.env.JWT_ISS    || 'banquito';
+const REQUIRED_VARS = ['JWT_SECRET', 'JWT_ISS', 'ADMIN_PASSWORD', 'TELLER_PASSWORD', 'EMPRESA_PASSWORD', 'CLIENTE_PASSWORD'];
+const missing = REQUIRED_VARS.filter(v => !process.env[v]);
+if (missing.length > 0) {
+  console.error('[auth-service] FATAL: variables de entorno requeridas no definidas:', missing.join(', '));
+  process.exit(1);
+}
 
-// Usuarios cargados desde variable de entorno AUTH_USERS (JSON) o defaults de demo
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_ISS    = process.env.JWT_ISS;
+
 const USERS = process.env.AUTH_USERS
   ? JSON.parse(process.env.AUTH_USERS)
   : {
-      admin:    { password: process.env.ADMIN_PASSWORD    || 'admin123',   role: 'admin' },
-      teller:   { password: process.env.TELLER_PASSWORD   || 'teller123',  role: 'teller' },
-      empresa1: { password: process.env.EMPRESA_PASSWORD  || 'empresa123', role: 'empresa' },
-      cliente1: { password: process.env.CLIENTE_PASSWORD  || 'cliente123', role: 'cliente' },
+      admin:    { password: process.env.ADMIN_PASSWORD,   role: 'admin' },
+      teller:   { password: process.env.TELLER_PASSWORD,  role: 'teller' },
+      empresa1: { password: process.env.EMPRESA_PASSWORD, role: 'empresa' },
+      cliente1: { password: process.env.CLIENTE_PASSWORD, role: 'cliente' },
     };
 
 function b64url(obj) {

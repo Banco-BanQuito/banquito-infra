@@ -14,8 +14,42 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
+          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_PASS,VM_PUBLIC_IP
           script: |
             cd ~/banquito/banquito-infra
             git pull
-            docker compose up -d --remove-orphans
+
+            # Regenerar .env desde GitHub Secrets (nunca toca bash history)
+            cat > .env << EOF
+            CLOUD_SQL_HOST=${CLOUD_SQL_HOST}
+            CLOUD_DB_USER=${CLOUD_DB_USER}
+            CLOUD_DB_PASS=${CLOUD_DB_PASS}
+            MONGO_ATLAS_URL=${MONGO_ATLAS_URL}
+            RABBITMQ_PASS=${RABBITMQ_PASS}
+            JWT_SECRET=${JWT_SECRET}
+            JWT_ISS=${JWT_ISS}
+            ADMIN_PASSWORD=${ADMIN_PASSWORD}
+            TELLER_PASSWORD=${TELLER_PASSWORD}
+            EMPRESA_PASSWORD=${EMPRESA_PASSWORD}
+            CLIENTE_PASSWORD=${CLIENTE_PASSWORD}
+            SMTP_PASS=${SMTP_PASS}
+            VM_PUBLIC_IP=${VM_PUBLIC_IP}
+            EOF
+
+            docker compose down
+            docker compose up -d
             docker image prune -f
+        env:
+          CLOUD_SQL_HOST: ${{ secrets.CLOUD_SQL_HOST }}
+          CLOUD_DB_USER: ${{ secrets.CLOUD_DB_USER }}
+          CLOUD_DB_PASS: ${{ secrets.CLOUD_DB_PASS }}
+          MONGO_ATLAS_URL: ${{ secrets.MONGO_ATLAS_URL }}
+          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_ISS: ${{ secrets.JWT_ISS }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          TELLER_PASSWORD: ${{ secrets.TELLER_PASSWORD }}
+          EMPRESA_PASSWORD: ${{ secrets.EMPRESA_PASSWORD }}
+          CLIENTE_PASSWORD: ${{ secrets.CLIENTE_PASSWORD }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          VM_PUBLIC_IP: ${{ secrets.VM_PUBLIC_IP }}
