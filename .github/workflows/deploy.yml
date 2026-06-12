@@ -16,25 +16,29 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_PASS,VM_PUBLIC_IP
           script: |
+            set -e
             cd ~/banquito/banquito-infra
             git pull
 
-            # Regenerar .env desde GitHub Secrets (nunca toca bash history)
-            cat > .env << EOF
-            CLOUD_SQL_HOST=${CLOUD_SQL_HOST}
-            CLOUD_DB_USER=${CLOUD_DB_USER}
-            CLOUD_DB_PASS=${CLOUD_DB_PASS}
-            MONGO_ATLAS_URL=${MONGO_ATLAS_URL}
-            RABBITMQ_PASS=${RABBITMQ_PASS}
-            JWT_SECRET=${JWT_SECRET}
-            JWT_ISS=${JWT_ISS}
-            ADMIN_PASSWORD=${ADMIN_PASSWORD}
-            TELLER_PASSWORD=${TELLER_PASSWORD}
-            EMPRESA_PASSWORD=${EMPRESA_PASSWORD}
-            CLIENTE_PASSWORD=${CLIENTE_PASSWORD}
-            SMTP_PASS=${SMTP_PASS}
-            VM_PUBLIC_IP=${VM_PUBLIC_IP}
-            EOF
+            # Regenerar .env solo si los secrets están configurados en GitHub
+            if [ -n "${JWT_SECRET}" ] && [ -n "${CLOUD_DB_PASS}" ]; then
+              printf 'CLOUD_SQL_HOST=%s\n'    "${CLOUD_SQL_HOST}"    >  .env
+              printf 'CLOUD_DB_USER=%s\n'     "${CLOUD_DB_USER}"     >> .env
+              printf 'CLOUD_DB_PASS=%s\n'     "${CLOUD_DB_PASS}"     >> .env
+              printf 'MONGO_ATLAS_URL=%s\n'   "${MONGO_ATLAS_URL}"   >> .env
+              printf 'RABBITMQ_PASS=%s\n'     "${RABBITMQ_PASS}"     >> .env
+              printf 'JWT_SECRET=%s\n'        "${JWT_SECRET}"        >> .env
+              printf 'JWT_ISS=%s\n'           "${JWT_ISS}"           >> .env
+              printf 'ADMIN_PASSWORD=%s\n'    "${ADMIN_PASSWORD}"    >> .env
+              printf 'TELLER_PASSWORD=%s\n'   "${TELLER_PASSWORD}"   >> .env
+              printf 'EMPRESA_PASSWORD=%s\n'  "${EMPRESA_PASSWORD}"  >> .env
+              printf 'CLIENTE_PASSWORD=%s\n'  "${CLIENTE_PASSWORD}"  >> .env
+              printf 'SMTP_PASS=%s\n'         "${SMTP_PASS}"         >> .env
+              printf 'VM_PUBLIC_IP=%s\n'      "${VM_PUBLIC_IP}"      >> .env
+              echo "[deploy] .env regenerado desde GitHub Secrets"
+            else
+              echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
+            fi
 
             docker compose down
             docker compose up -d
