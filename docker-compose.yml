@@ -57,15 +57,18 @@ services:
     restart: unless-stopped
     environment:
       KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
       KONG_ADMIN_LISTEN: "0.0.0.0:8001"
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISS: "${JWT_ISS}"
     volumes:
-      - ./kong/core/kong.yml:/kong/declarative/kong.yml:ro
+      - ./kong/core/kong.yml:/kong/declarative/kong.yml.template:ro
+    entrypoint: ["/bin/sh", "-c", "envsubst < /kong/declarative/kong.yml.template > /tmp/kong.yml && /docker-entrypoint.sh kong docker-start"]
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -85,15 +88,18 @@ services:
     restart: unless-stopped
     environment:
       KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_DECLARATIVE_CONFIG: /tmp/kong.yml
       KONG_PROXY_LISTEN: "0.0.0.0:8000"
       KONG_ADMIN_LISTEN: "0.0.0.0:8001"
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_ADMIN_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
       KONG_ADMIN_ERROR_LOG: /dev/stderr
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_ISS: "${JWT_ISS}"
     volumes:
-      - ./kong/switch/kong.yml:/kong/declarative/kong.yml:ro
+      - ./kong/switch/kong.yml:/kong/declarative/kong.yml.template:ro
+    entrypoint: ["/bin/sh", "-c", "envsubst < /kong/declarative/kong.yml.template > /tmp/kong.yml && /docker-entrypoint.sh kong docker-start"]
     ports:
       - "8010:8000"
       - "8011:8001"
@@ -149,9 +155,9 @@ services:
     container_name: party-service
     restart: on-failure
     environment:
-      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/partydb
-      DB_USER: ${CLOUD_DB_USER}
-      DB_PASS: ${CLOUD_DB_PASS}
+      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      DB_USER: ${CLOUD_MYSQL_USER}
+      DB_PASS: ${CLOUD_MYSQL_PASS}
       SERVER_PORT: "8083"
       ACCOUNT_CORE_GRPC_HOST: account-core-service
       ACCOUNT_CORE_GRPC_PORT: "9091"
@@ -170,11 +176,9 @@ services:
     container_name: file-reception-service
     restart: on-failure
     environment:
-      POSTGRES_HOST: "${CLOUD_SQL_HOST}"
-      POSTGRES_PORT: "5432"
-      POSTGRES_DB: "filedb"
-      POSTGRES_USER: "${CLOUD_DB_USER}"
-      POSTGRES_PASSWORD: "${CLOUD_DB_PASS}"
+      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/filedb?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      DB_USER: "${CLOUD_MYSQL_USER}"
+      DB_PASS: "${CLOUD_MYSQL_PASS}"
       MONGO_URI: "mongodb+srv://${MONGO_ATLAS_URL}/filedb"
       RABBITMQ_HOST: "rabbitmq"
       RABBITMQ_PORT: "5672"
@@ -228,9 +232,9 @@ services:
     container_name: tariff-service
     restart: on-failure
     environment:
-      POSTGRES_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/tariffdb
-      POSTGRES_USER: ${CLOUD_DB_USER}
-      POSTGRES_PASSWORD: ${CLOUD_DB_PASS}
+      POSTGRES_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/tariffdb?useSSL=true&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      POSTGRES_USER: ${CLOUD_MYSQL_USER}
+      POSTGRES_PASSWORD: ${CLOUD_MYSQL_PASS}
       SERVER_PORT: "8086"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"

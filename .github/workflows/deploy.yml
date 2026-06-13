@@ -14,7 +14,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_PASS,VM_PUBLIC_IP
+          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_PASS,VM_PUBLIC_IP
           script: |
             set -e
             cd ~/banquito/banquito-infra
@@ -25,6 +25,9 @@ jobs:
               printf 'CLOUD_SQL_HOST=%s\n'    "${CLOUD_SQL_HOST}"    >  .env
               printf 'CLOUD_DB_USER=%s\n'     "${CLOUD_DB_USER}"     >> .env
               printf 'CLOUD_DB_PASS=%s\n'     "${CLOUD_DB_PASS}"     >> .env
+              printf 'CLOUD_MYSQL_HOST=%s\n'  "${CLOUD_MYSQL_HOST}"  >> .env
+              printf 'CLOUD_MYSQL_USER=%s\n'  "${CLOUD_MYSQL_USER}"  >> .env
+              printf 'CLOUD_MYSQL_PASS=%s\n'  "${CLOUD_MYSQL_PASS}"  >> .env
               printf 'MONGO_ATLAS_URL=%s\n'   "${MONGO_ATLAS_URL}"   >> .env
               printf 'RABBITMQ_PASS=%s\n'     "${RABBITMQ_PASS}"     >> .env
               printf 'JWT_SECRET=%s\n'        "${JWT_SECRET}"        >> .env
@@ -47,6 +50,9 @@ jobs:
           CLOUD_SQL_HOST: ${{ secrets.CLOUD_SQL_HOST }}
           CLOUD_DB_USER: ${{ secrets.CLOUD_DB_USER }}
           CLOUD_DB_PASS: ${{ secrets.CLOUD_DB_PASS }}
+          CLOUD_MYSQL_HOST: ${{ secrets.CLOUD_MYSQL_HOST }}
+          CLOUD_MYSQL_USER: ${{ secrets.CLOUD_MYSQL_USER }}
+          CLOUD_MYSQL_PASS: ${{ secrets.CLOUD_MYSQL_PASS }}
           MONGO_ATLAS_URL: ${{ secrets.MONGO_ATLAS_URL }}
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
