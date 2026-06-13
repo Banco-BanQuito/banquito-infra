@@ -43,6 +43,10 @@ jobs:
               echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
             fi
 
+            # Crear/actualizar schemas MySQL (idempotente — usa IF NOT EXISTS)
+            mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
+              echo "[deploy] schemas MySQL aplicados" || echo "[deploy] AVISO: fallo al aplicar schemas MySQL"
+
             docker compose down
             docker compose up -d
             docker image prune -f
