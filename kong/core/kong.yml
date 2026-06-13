@@ -15,12 +15,12 @@ _transform: true
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── Consumidor JWT — la clave debe coincidir con el claim "iss" del token ─────
-# El auth-service firma tokens con: iss="banquito", secret="banquito-jwt-secret-2024"
+# El auth-service firma tokens con: iss=${JWT_ISS}, secret=${JWT_SECRET}
 consumers:
   - username: banquito-app
     jwt_secrets:
-      - key: banquito
-        secret: banquito-jwt-secret-2024
+      - key: ${JWT_ISS}
+        secret: ${JWT_SECRET}
         algorithm: HS256
 
 services:

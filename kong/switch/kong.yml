@@ -23,8 +23,8 @@ _transform: true
 consumers:
   - username: banquito-app
     jwt_secrets:
-      - key: banquito
-        secret: banquito-jwt-secret-2024
+      - key: ${JWT_ISS}
+        secret: ${JWT_SECRET}
         algorithm: HS256
 
 plugins:
