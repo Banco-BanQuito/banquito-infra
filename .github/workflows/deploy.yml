@@ -22,22 +22,23 @@ jobs:
 
             # Regenerar .env solo si los secrets están configurados en GitHub
             if [ -n "${JWT_SECRET}" ] && [ -n "${CLOUD_DB_PASS}" ]; then
-              printf 'CLOUD_SQL_HOST=%s\n'    "${CLOUD_SQL_HOST}"    >  .env
-              printf 'CLOUD_DB_USER=%s\n'     "${CLOUD_DB_USER}"     >> .env
-              printf 'CLOUD_DB_PASS=%s\n'     "${CLOUD_DB_PASS}"     >> .env
-              printf 'CLOUD_MYSQL_HOST=%s\n'  "${CLOUD_MYSQL_HOST}"  >> .env
-              printf 'CLOUD_MYSQL_USER=%s\n'  "${CLOUD_MYSQL_USER}"  >> .env
-              printf 'CLOUD_MYSQL_PASS=%s\n'  "${CLOUD_MYSQL_PASS}"  >> .env
-              printf 'MONGO_ATLAS_URL=%s\n'   "${MONGO_ATLAS_URL}"   >> .env
-              printf 'RABBITMQ_PASS=%s\n'     "${RABBITMQ_PASS}"     >> .env
-              printf 'JWT_SECRET=%s\n'        "${JWT_SECRET}"        >> .env
-              printf 'JWT_ISS=%s\n'           "${JWT_ISS}"           >> .env
-              printf 'ADMIN_PASSWORD=%s\n'    "${ADMIN_PASSWORD}"    >> .env
-              printf 'TELLER_PASSWORD=%s\n'   "${TELLER_PASSWORD}"   >> .env
-              printf 'EMPRESA_PASSWORD=%s\n'  "${EMPRESA_PASSWORD}"  >> .env
-              printf 'CLIENTE_PASSWORD=%s\n'  "${CLIENTE_PASSWORD}"  >> .env
-              printf 'SMTP_PASS=%s\n'         "${SMTP_PASS}"         >> .env
-              printf 'VM_PUBLIC_IP=%s\n'      "${VM_PUBLIC_IP}"      >> .env
+              # tr -d '\r\n' elimina saltos de línea que GitHub Actions puede inyectar en los secrets
+              printf 'CLOUD_SQL_HOST=%s\n'    "$(printf '%s' "${CLOUD_SQL_HOST}"    | tr -d '\r\n')"  >  .env
+              printf 'CLOUD_DB_USER=%s\n'     "$(printf '%s' "${CLOUD_DB_USER}"     | tr -d '\r\n')"  >> .env
+              printf 'CLOUD_DB_PASS=%s\n'     "$(printf '%s' "${CLOUD_DB_PASS}"     | tr -d '\r\n')"  >> .env
+              printf 'CLOUD_MYSQL_HOST=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_HOST}"  | tr -d '\r\n')"  >> .env
+              printf 'CLOUD_MYSQL_USER=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_USER}"  | tr -d '\r\n')"  >> .env
+              printf 'CLOUD_MYSQL_PASS=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_PASS}"  | tr -d '\r\n')"  >> .env
+              printf 'MONGO_ATLAS_URL=%s\n'   "$(printf '%s' "${MONGO_ATLAS_URL}"   | tr -d '\r\n')"  >> .env
+              printf 'RABBITMQ_PASS=%s\n'     "$(printf '%s' "${RABBITMQ_PASS}"     | tr -d '\r\n')"  >> .env
+              printf 'JWT_SECRET=%s\n'        "$(printf '%s' "${JWT_SECRET}"        | tr -d '\r\n')"  >> .env
+              printf 'JWT_ISS=%s\n'           "$(printf '%s' "${JWT_ISS}"           | tr -d '\r\n')"  >> .env
+              printf 'ADMIN_PASSWORD=%s\n'    "$(printf '%s' "${ADMIN_PASSWORD}"    | tr -d '\r\n')"  >> .env
+              printf 'TELLER_PASSWORD=%s\n'   "$(printf '%s' "${TELLER_PASSWORD}"   | tr -d '\r\n')"  >> .env
+              printf 'EMPRESA_PASSWORD=%s\n'  "$(printf '%s' "${EMPRESA_PASSWORD}"  | tr -d '\r\n')"  >> .env
+              printf 'CLIENTE_PASSWORD=%s\n'  "$(printf '%s' "${CLIENTE_PASSWORD}"  | tr -d '\r\n')"  >> .env
+              printf 'SMTP_PASS=%s\n'         "$(printf '%s' "${SMTP_PASS}"         | tr -d '\r\n')"  >> .env
+              printf 'VM_PUBLIC_IP=%s\n'      "$(printf '%s' "${VM_PUBLIC_IP}"      | tr -d '\r\n')"  >> .env
               echo "[deploy] .env regenerado desde GitHub Secrets"
             else
               echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
