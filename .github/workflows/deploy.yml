@@ -44,6 +44,9 @@ jobs:
               echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
             fi
 
+            # Instalar mysql-client si no está disponible
+            command -v mysql > /dev/null 2>&1 || sudo apt-get install -y -q default-mysql-client
+
             # Crear/actualizar schemas MySQL (idempotente — usa IF NOT EXISTS)
             mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
               echo "[deploy] schemas MySQL aplicados" || echo "[deploy] AVISO: fallo al aplicar schemas MySQL"
