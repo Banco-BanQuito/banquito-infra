@@ -47,6 +47,10 @@ jobs:
             mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
               echo "[deploy] schemas MySQL aplicados" || echo "[deploy] AVISO: fallo al aplicar schemas MySQL"
 
+            # Resolver variables JWT en Kong config (sed sustituye ${JWT_SECRET} y ${JWT_ISS})
+            sed -i "s|\${JWT_SECRET}|${JWT_SECRET}|g; s|\${JWT_ISS}|${JWT_ISS}|g" kong/core/kong.yml kong/switch/kong.yml
+            echo "[deploy] Kong JWT config resuelto"
+
             docker compose down
             docker compose up -d
             docker image prune -f
