@@ -3,6 +3,7 @@ const http = require('http');
 const crypto = require('crypto');
 
 const REQUIRED_VARS = ['JWT_SECRET', 'JWT_ISS', 'ADMIN_PASSWORD', 'TELLER_PASSWORD', 'EMPRESA_PASSWORD', 'CLIENTE_PASSWORD'];
+const EMPRESA1_RUC = process.env.EMPRESA1_RUC || null;
 const missing = REQUIRED_VARS.filter(v => !process.env[v]);
 if (missing.length > 0) {
   console.error('[auth-service] FATAL: variables de entorno requeridas no definidas:', missing.join(', '));
@@ -12,13 +13,15 @@ if (missing.length > 0) {
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_ISS    = process.env.JWT_ISS;
 
+// Build users map dynamically — empresa key IS the RUC so login works with RUC as username
+const empresaKey = process.env.EMPRESA1_RUC || 'empresa1';
 const USERS = process.env.AUTH_USERS
   ? JSON.parse(process.env.AUTH_USERS)
   : {
-      admin:    { password: process.env.ADMIN_PASSWORD,   role: 'admin' },
-      teller:   { password: process.env.TELLER_PASSWORD,  role: 'teller' },
-      empresa1: { password: process.env.EMPRESA_PASSWORD, role: 'empresa' },
-      cliente1: { password: process.env.CLIENTE_PASSWORD, role: 'cliente' },
+      admin:                { password: process.env.ADMIN_PASSWORD,   role: 'admin' },
+      teller:               { password: process.env.TELLER_PASSWORD,  role: 'teller' },
+      [empresaKey]:         { password: process.env.EMPRESA_PASSWORD, role: 'empresa' },
+      cliente1:             { password: process.env.CLIENTE_PASSWORD, role: 'cliente' },
     };
 
 function b64url(obj) {

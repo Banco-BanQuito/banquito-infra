@@ -14,7 +14,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_PASS,VM_PUBLIC_IP
+          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_USER,SMTP_HOST,SMTP_PORT,SMTP_PASS,VM_PUBLIC_IP,DOCKER_CONFIG_PATH
           script: |
             set -e
             cd ~/banquito/banquito-infra
@@ -37,15 +37,29 @@ jobs:
               printf 'TELLER_PASSWORD=%s\n'   "$(printf '%s' "${TELLER_PASSWORD}"   | tr -d '\r\n')"  >> .env
               printf 'EMPRESA_PASSWORD=%s\n'  "$(printf '%s' "${EMPRESA_PASSWORD}"  | tr -d '\r\n')"  >> .env
               printf 'CLIENTE_PASSWORD=%s\n'  "$(printf '%s' "${CLIENTE_PASSWORD}"  | tr -d '\r\n')"  >> .env
+              printf 'SMTP_USER=%s\n'         "$(printf '%s' "${SMTP_USER}"         | tr -d '\r\n')"  >> .env
+              printf 'SMTP_HOST=%s\n'         "$(printf '%s' "${SMTP_HOST}"         | tr -d '\r\n')"  >> .env
+              printf 'SMTP_PORT=%s\n'         "$(printf '%s' "${SMTP_PORT}"         | tr -d '\r\n')"  >> .env
               printf 'SMTP_PASS=%s\n'         "$(printf '%s' "${SMTP_PASS}"         | tr -d '\r\n')"  >> .env
               printf 'VM_PUBLIC_IP=%s\n'      "$(printf '%s' "${VM_PUBLIC_IP}"      | tr -d '\r\n')"  >> .env
+              printf 'DOCKER_CONFIG_PATH=%s\n' "$(printf '%s' "${DOCKER_CONFIG_PATH}" | tr -d '\r\n')"  >> .env
               echo "[deploy] .env regenerado desde GitHub Secrets"
             else
               echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
             fi
 
-            # Instalar mysql-client si no está disponible
+            # Instalar clientes de BD si no están disponibles
             command -v mysql > /dev/null 2>&1 || sudo apt-get install -y -q default-mysql-client
+            command -v psql  > /dev/null 2>&1 || sudo apt-get install -y -q postgresql-client
+
+            # Crear BD banquito en PostgreSQL y sus schemas (idempotente)
+            PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" -tc \
+              "SELECT 1 FROM pg_database WHERE datname='banquito'" | grep -q 1 || \
+              PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" \
+              -c "CREATE DATABASE banquito;" && echo "[deploy] BD banquito creada"
+            PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" \
+              -d banquito < db/postgres-schema.sql && \
+              echo "[deploy] schemas PostgreSQL aplicados" || echo "[deploy] AVISO: fallo schemas PostgreSQL"
 
             # Crear/actualizar schemas MySQL (idempotente — usa IF NOT EXISTS)
             mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
@@ -73,5 +87,9 @@ jobs:
           TELLER_PASSWORD: ${{ secrets.TELLER_PASSWORD }}
           EMPRESA_PASSWORD: ${{ secrets.EMPRESA_PASSWORD }}
           CLIENTE_PASSWORD: ${{ secrets.CLIENTE_PASSWORD }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           VM_PUBLIC_IP: ${{ secrets.VM_PUBLIC_IP }}
+          DOCKER_CONFIG_PATH: ${{ secrets.DOCKER_CONFIG_PATH }}

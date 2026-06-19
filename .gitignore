@@ -5,3 +5,23 @@
 
 # Artefactos de Docker
 .docker/
+node_modules/
+package-lock.json
+package.json
+docker-compose.local.yml
+
+# Scripts de prueba y archivos locales de consulta
+find_customer.js
+find_empresa.js
+query_mysql.js
+query_mysql.py
+test_db.py
+reporte-datos.sh
+EXPORTAR-USUARIOS.sh
+start-local.sh
+memory/
+
+# Consultas y esquemas locales
+db/QUERY-USUARIOS-CORE-GRUPO1.sql
+db/QUERY-USUARIOS.sql
+db/postgres-schema.sql

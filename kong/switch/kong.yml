@@ -38,6 +38,30 @@ plugins:
       policy: local
       hide_client_headers: false
 
+  - name: cors
+    config:
+      origins:
+        - "*"
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - Authorization
+      exposed_headers:
+        - Authorization
+      credentials: true
+      max_age: 3600
+
 services:
 
   # ── auth-service (RUTA PÚBLICA — sin plugin JWT) ──────────────────────────
@@ -62,20 +86,27 @@ services:
     connect_timeout: 10000
     write_timeout: 120000
     read_timeout: 120000
-    plugins:
-      - name: jwt
-        config:
-          key_claim_name: iss
-          secret_is_base64: false
     routes:
 
       # POST /api/v2/payments/batches
-      # Carga de archivo de pagos masivos (puede ser un archivo grande)
+      # RF-02: Carga de archivo → validación estructural → 202 inmediato → RabbitMQ async
       - name: batches-upload
         paths:
           - /api/v2/payments/batches
         methods:
           - POST
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+      # GET, POST, DELETE /api/v2/payments/routing-codes
+      - name: routing-codes-catalog
+        paths:
+          - /api/v2/payments/routing-codes
+        methods:
+          - GET
+          - POST
+          - DELETE
+          - OPTIONS
         strip_path: false
         preserve_host: false
 
@@ -85,11 +116,6 @@ services:
     connect_timeout: 10000
     write_timeout: 30000
     read_timeout: 30000
-    plugins:
-      - name: jwt
-        config:
-          key_claim_name: iss
-          secret_is_base64: false
     routes:
 
       # GET /api/v2/payments/batches/{id}/status
@@ -99,6 +125,7 @@ services:
           - ~/api/v2/payments/batches/[^/]+/status$
         methods:
           - GET
+          - OPTIONS
         strip_path: false
         preserve_host: false
         regex_priority: 100
@@ -109,11 +136,6 @@ services:
     connect_timeout: 10000
     write_timeout: 60000
     read_timeout: 60000
-    plugins:
-      - name: jwt
-        config:
-          key_claim_name: iss
-          secret_is_base64: false
     routes:
 
       # GET /api/v2/payments/batches/{id}/report
@@ -122,6 +144,7 @@ services:
           - ~/api/v2/payments/batches/[^/]+/report$
         methods:
           - GET
+          - OPTIONS
         strip_path: false
         preserve_host: false
         regex_priority: 100
@@ -129,8 +152,37 @@ services:
       # GET /api/v2/payments/receipts/{id}
       - name: payment-receipts
         paths:
-          - /api/v2/payments/receipts
+          - ~/api/v2/payments/receipts/[^/]+$
         methods:
           - GET
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+        regex_priority: 100
+
+      # GET /api/v2/payments/receipts/{id}/pdf
+      - name: payment-receipts-pdf
+        paths:
+          - ~/api/v2/payments/receipts/[^/]+/pdf$
+        methods:
+          - GET
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+        regex_priority: 101
+
+  # ── account-core-service ──────────────────────────────────────────────────
+  - name: account-core-service
+    url: http://account-core-service:8081
+    connect_timeout: 5000
+    write_timeout: 10000
+    read_timeout: 10000
+    routes:
+      - name: account-core-accounts
+        paths:
+          - /api/v2/accounts
+        methods:
+          - GET
+          - OPTIONS
         strip_path: false
         preserve_host: false

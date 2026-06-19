@@ -1,9 +1,11 @@
 -- ══════════════════════════════════════════════════════════════════════════
 -- CARGA DE DATOS — ~950,000 clientes adicionales para pruebas de carga
 --
--- Formato de número de cuenta (igual que V1):
---   branch_code(3 dígitos) + sequence(7 dígitos) = 10 caracteres
---   Sucursales: 001=Norte 002=Sur 003=Centro 004=Valles 005=Digital
+-- Formato de número de cuenta (igual que 03-seed-accountdb.sql):
+--   product_code(2 dígitos) + customer_id(8 dígitos) = 10 caracteres
+--   22=Ahorros Personal 23=Corriente Personal 30=Corriente Operativa
+--   31=Ahorros Nómina   32=Ahorros Impuestos
+--   branch_id se guarda en su propia columna (no en el número de cuenta)
 --
 -- Rango de customer_id nuevo (no pisa los 9,500 existentes):
 --   Individuales : 9501   → 900000  (890,500 personas naturales)
@@ -20,7 +22,7 @@ SET synchronous_commit = OFF;
 INSERT INTO account (account_number, customer_id, branch_id, account_subtype_id,
                      accounting_balance, available_balance, status, opening_date)
 SELECT
-    LPAD(((n % 5) + 1)::text, 3, '0') || LPAD(n::text, 7, '0'),
+    '22' || LPAD(n::text, 8, '0'),
     n,
     ((n - 1) % 5) + 1,
     1,
@@ -34,7 +36,7 @@ FROM generate_series(9501, 900000) AS n;
 INSERT INTO account (account_number, customer_id, branch_id, account_subtype_id,
                      accounting_balance, available_balance, status, opening_date)
 SELECT
-    LPAD(((n % 5) + 1)::text, 3, '0') || LPAD((n + 1000000)::text, 7, '0'),
+    '23' || LPAD(n::text, 8, '0'),
     n,
     ((n - 1) % 5) + 1,
     2,
@@ -46,11 +48,15 @@ FROM generate_series(9501, 900000) AS n
 WHERE n % 5 = 0;
 
 -- ── Corporativos 900001-950000 ────────────────────────────────────────────
+-- Cada empresa obtiene sus 3 cuentas a partir de su propio customer_id —
+-- no hace falta desplazar la secuencia porque el prefijo de producto (30/31/32)
+-- ya distingue cada cuenta del mismo cliente.
+
 -- Corriente Operativa (subtype 3)
 INSERT INTO account (account_number, customer_id, branch_id, account_subtype_id,
                      accounting_balance, available_balance, status, opening_date)
 SELECT
-    LPAD(((n % 5) + 1)::text, 3, '0') || LPAD((n - 800000)::text, 7, '0'),
+    '30' || LPAD(n::text, 8, '0'),
     n,
     ((n - 900001) % 5) + 1,
     3,
@@ -64,7 +70,7 @@ FROM generate_series(900001, 950000) AS n;
 INSERT INTO account (account_number, customer_id, branch_id, account_subtype_id,
                      accounting_balance, available_balance, status, opening_date)
 SELECT
-    LPAD(((n % 5) + 1)::text, 3, '0') || LPAD((n - 750000)::text, 7, '0'),
+    '31' || LPAD(n::text, 8, '0'),
     n,
     ((n - 900001) % 5) + 1,
     4,
@@ -78,7 +84,7 @@ FROM generate_series(900001, 950000) AS n;
 INSERT INTO account (account_number, customer_id, branch_id, account_subtype_id,
                      accounting_balance, available_balance, status, opening_date)
 SELECT
-    LPAD(((n % 5) + 1)::text, 3, '0') || LPAD((n - 700000)::text, 7, '0'),
+    '32' || LPAD(n::text, 8, '0'),
     n,
     ((n - 900001) % 5) + 1,
     5,

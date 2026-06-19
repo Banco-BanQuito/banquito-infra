@@ -91,6 +91,10 @@ services:
     build:
       context: ../banquito-teller-frontend
 
+  operador-frontend:
+    build:
+      context: ../banquito-frontend-web-operador
+
   web-empresas-frontend:
     build:
       context: ../banquito-web-empresas-frontend

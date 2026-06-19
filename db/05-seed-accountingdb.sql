@@ -20,7 +20,17 @@ INSERT INTO accounting_account (account_code, name, account_class, account_type,
 ('2.2.0.00', 'Retenciones e Impuestos',                'PASIVO', 'ESTRUCTURAL', '2.0.0.00',  0.00),
 ('2.2.0.01', 'IVA Retenido por Servicios',             'PASIVO', 'DETALLE',     '2.2.0.00',  0.00),
 
+-- ── PATRIMONIO ────────────────────────────────────────────────────────────
+('3.0.0.00', 'PATRIMONIO',                             'PATRIMONIO', 'ESTRUCTURAL', NULL,        0.00),
+('3.1.0.00', 'Capital y Reservas',                     'PATRIMONIO', 'ESTRUCTURAL', '3.0.0.00',  0.00),
+('3.1.0.01', 'Patrimonio / Capital Inicial',           'PATRIMONIO', 'DETALLE',     '3.1.0.00',  0.00),
+
 -- ── INGRESOS ──────────────────────────────────────────────────────────────
 ('4.0.0.00', 'INGRESOS',                               'INGRESO', 'ESTRUCTURAL', NULL,       0.00),
 ('4.1.0.00', 'Ingresos por Servicios',                 'INGRESO', 'ESTRUCTURAL', '4.0.0.00', 0.00),
-('4.1.0.01', 'Comisiones por Pagos Masivos',           'INGRESO', 'DETALLE',     '4.1.0.00', 0.00);
+('4.1.0.01', 'Comisiones por Pagos Masivos',           'INGRESO', 'DETALLE',     '4.1.0.00', 0.00),
+
+-- ── GASTOS ────────────────────────────────────────────────────────────────
+('5.0.0.00', 'GASTOS',                                 'GASTO', 'ESTRUCTURAL', NULL,        0.00),
+('5.1.0.00', 'Gastos Operativos',                      'GASTO', 'ESTRUCTURAL', '5.0.0.00',  0.00),
+('5.1.0.01', 'Gastos por Servicios Bancarios',         'GASTO', 'DETALLE',     '5.1.0.00',  0.00);
