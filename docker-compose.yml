@@ -316,7 +316,8 @@ services:
     environment:
       JWT_SECRET: "${JWT_SECRET}"
       JWT_ISS: "${JWT_ISS}"
-      EMPRESA1_RUC: "${EMPRESA1_RUC}"
+      ACCOUNT_CORE_URL: http://account-core-service:8081
+      PARTY_SERVICE_URL: http://party-service:8083
     ports:
       - "8090:8090"
     networks:
