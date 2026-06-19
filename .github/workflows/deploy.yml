@@ -59,7 +59,7 @@ jobs:
               echo "[deploy] schemas PostgreSQL aplicados" || echo "[deploy] AVISO: fallo schemas PostgreSQL"
 
             # Crear/actualizar schemas MySQL (idempotente — usa IF NOT EXISTS)
-            mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
+            LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN=1 mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
               echo "[deploy] schemas MySQL aplicados" || echo "[deploy] AVISO: fallo al aplicar schemas MySQL"
 
             # Resolver variables JWT en Kong config (sed sustituye ${JWT_SECRET} y ${JWT_ISS})

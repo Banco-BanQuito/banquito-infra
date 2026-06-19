@@ -110,9 +110,7 @@ services:
 # ── MICROSERVICIOS CORE ───────────────────────────────────────────────────────
 
   account-core-service:
-    build:
-      context: ../banquito-account-core-service
-      dockerfile: Dockerfile
+    image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
     container_name: account-core-service
     restart: on-failure
     environment:
@@ -157,7 +155,6 @@ services:
       - core-net
 
   party-service:
-    build: ../banquito-party-service
     image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
     container_name: party-service
     restart: on-failure
@@ -179,8 +176,7 @@ services:
 # ── MICROSERVICIOS SWITCH ─────────────────────────────────────────────────────
 
   file-reception-service:
-    build: ../banquito-file-reception-service
-    # image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
+    image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
     container_name: file-reception-service
     restart: on-failure
     environment:
@@ -209,8 +205,7 @@ services:
         condition: service_healthy
 
   routing-service:
-    build: ../banquito-routing-service
-    # image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
+    image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
     container_name: routing-service
     restart: on-failure
     environment:
@@ -241,7 +236,6 @@ services:
         condition: service_healthy
 
   tariff-service:
-    build: ../banquito-tariff-service/banquito-tariff-service
     image: ${TARIFF_IMAGE:-ghcr.io/banco-banquito/tariff-service:latest}
     container_name: tariff-service
     restart: on-failure
@@ -295,9 +289,7 @@ services:
       - core-net
 
   notification-service:
-    build:
-      context: ../banquito-notification-service
-      dockerfile: Dockerfile
+    image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
     container_name: notification-service
     restart: on-failure
     environment:
@@ -318,9 +310,6 @@ services:
 # ── AUTH SERVICE ──────────────────────────────────────────────────────────────
 
   auth-service:
-    build:
-      context: ./auth
-      dockerfile: Dockerfile
     image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
     container_name: auth-service
     restart: on-failure
@@ -346,7 +335,6 @@ services:
       - core-net
 
   operador-frontend:
-    build: ../banquito-frontend-web-operador
     image: ${OPERADOR_FRONTEND_IMAGE:-ghcr.io/banco-banquito/operador-frontend:latest}
     container_name: operador-frontend
     restart: on-failure
@@ -356,7 +344,6 @@ services:
       - core-net
 
   web-personas-frontend:
-    build: ../banquito-web-personas-frontend
     image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
     container_name: web-personas-frontend
     restart: on-failure
@@ -366,7 +353,6 @@ services:
       - core-net
 
   web-empresas-frontend:
-    build: ../banquito-web-empresas-frontend
     image: ${WEB_EMPRESAS_IMAGE:-ghcr.io/banco-banquito/web-empresas-frontend:latest}
     container_name: web-empresas-frontend
     restart: on-failure

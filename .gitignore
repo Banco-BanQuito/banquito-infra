@@ -24,4 +24,3 @@ memory/
 # Consultas y esquemas locales
 db/QUERY-USUARIOS-CORE-GRUPO1.sql
 db/QUERY-USUARIOS.sql
-db/postgres-schema.sql
