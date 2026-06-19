@@ -66,8 +66,8 @@ jobs:
             sed -i "s|\${JWT_SECRET}|${JWT_SECRET}|g; s|\${JWT_ISS}|${JWT_ISS}|g" kong/core/kong.yml kong/switch/kong.yml
             echo "[deploy] Kong JWT config resuelto"
 
-            docker compose down
-            docker compose up -d
+            docker compose -f docker-compose.yml down
+            docker compose -f docker-compose.yml up -d
             docker image prune -f
         env:
           CLOUD_SQL_HOST: ${{ secrets.CLOUD_SQL_HOST }}
