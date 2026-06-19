@@ -43,7 +43,7 @@ jobs:
               printf 'SMTP_PASS=%s\n'         "$(printf '%s' "${SMTP_PASS}"         | tr -d '\r\n')"  >> .env
               printf 'VM_PUBLIC_IP=%s\n'      "$(printf '%s' "${VM_PUBLIC_IP}"      | tr -d '\r\n')"  >> .env
               printf 'DOCKER_CONFIG_PATH=%s\n' "$(printf '%s' "${DOCKER_CONFIG_PATH}" | tr -d '\r\n')"  >> .env
-              printf 'EMPRESA1_RUC=%s\n'       "$(printf '%s' "${EMPRESA1_RUC:-1791112223001}" | tr -d '\r\n')" >> .env
+              printf 'EMPRESA1_RUC=%s\n'       "$(printf '%s' "${EMPRESA1_RUC}" | tr -d '\r\n')" >> .env
               echo "[deploy] .env regenerado desde GitHub Secrets"
             else
               echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
