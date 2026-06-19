@@ -17,10 +17,10 @@ const EMPRESA1_RUC = process.env.EMPRESA1_RUC || '';
 const USERS = process.env.AUTH_USERS
   ? JSON.parse(process.env.AUTH_USERS)
   : {
-      admin:                { password: process.env.ADMIN_PASSWORD || '',   role: 'admin' },
-      teller:               { password: process.env.TELLER_PASSWORD || '',  role: 'teller' },
-      [EMPRESA1_RUC || 'empresa']: { password: process.env.EMPRESA_PASSWORD || '', role: 'empresa' },
-      cliente1:             { password: process.env.CLIENTE_PASSWORD || '', role: 'cliente' },
+      admin:                { password: '', role: 'admin' },
+      teller:               { password: '', role: 'teller' },
+      [EMPRESA1_RUC || 'empresa']: { password: '', role: 'empresa' },
+      cliente1:             { password: '', role: 'cliente' },
     };
 
 function b64url(obj) {

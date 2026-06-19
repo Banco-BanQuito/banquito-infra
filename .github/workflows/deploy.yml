@@ -14,7 +14,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,ADMIN_PASSWORD,TELLER_PASSWORD,EMPRESA_PASSWORD,CLIENTE_PASSWORD,SMTP_USER,SMTP_HOST,SMTP_PORT,SMTP_PASS,VM_PUBLIC_IP,DOCKER_CONFIG_PATH,EMPRESA1_RUC
+          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,SMTP_USER,SMTP_HOST,SMTP_PORT,SMTP_PASS,VM_PUBLIC_IP,DOCKER_CONFIG_PATH,EMPRESA1_RUC
           script: |
             set -e
             cd ~/banquito/banquito-infra
@@ -33,10 +33,6 @@ jobs:
               printf 'RABBITMQ_PASS=%s\n'     "$(printf '%s' "${RABBITMQ_PASS}"     | tr -d '\r\n')"  >> .env
               printf 'JWT_SECRET=%s\n'        "$(printf '%s' "${JWT_SECRET}"        | tr -d '\r\n')"  >> .env
               printf 'JWT_ISS=%s\n'           "$(printf '%s' "${JWT_ISS}"           | tr -d '\r\n')"  >> .env
-              printf 'ADMIN_PASSWORD=%s\n'    "$(printf '%s' "${ADMIN_PASSWORD}"    | tr -d '\r\n')"  >> .env
-              printf 'TELLER_PASSWORD=%s\n'   "$(printf '%s' "${TELLER_PASSWORD}"   | tr -d '\r\n')"  >> .env
-              printf 'EMPRESA_PASSWORD=%s\n'  "$(printf '%s' "${EMPRESA_PASSWORD}"  | tr -d '\r\n')"  >> .env
-              printf 'CLIENTE_PASSWORD=%s\n'  "$(printf '%s' "${CLIENTE_PASSWORD}"  | tr -d '\r\n')"  >> .env
               printf 'SMTP_USER=%s\n'         "$(printf '%s' "${SMTP_USER}"         | tr -d '\r\n')"  >> .env
               printf 'SMTP_HOST=%s\n'         "$(printf '%s' "${SMTP_HOST}"         | tr -d '\r\n')"  >> .env
               printf 'SMTP_PORT=%s\n'         "$(printf '%s' "${SMTP_PORT}"         | tr -d '\r\n')"  >> .env
@@ -84,10 +80,6 @@ jobs:
           RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           JWT_ISS: ${{ secrets.JWT_ISS }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          TELLER_PASSWORD: ${{ secrets.TELLER_PASSWORD }}
-          EMPRESA_PASSWORD: ${{ secrets.EMPRESA_PASSWORD }}
-          CLIENTE_PASSWORD: ${{ secrets.CLIENTE_PASSWORD }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}

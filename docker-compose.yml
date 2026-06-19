@@ -327,10 +327,6 @@ services:
     environment:
       JWT_SECRET: "${JWT_SECRET}"
       JWT_ISS: "${JWT_ISS}"
-      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
-      TELLER_PASSWORD: "${TELLER_PASSWORD}"
-      EMPRESA_PASSWORD: "${EMPRESA_PASSWORD}"
-      CLIENTE_PASSWORD: "${CLIENTE_PASSWORD}"
       EMPRESA1_RUC: "${EMPRESA1_RUC}"
     ports:
       - "8090:8090"
