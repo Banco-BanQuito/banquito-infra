@@ -134,7 +134,7 @@ services:
       SERVER_PORT: "8081"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3005"
       RABBITMQ_HOST: "rabbitmq"
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: "banquito"
@@ -158,7 +158,7 @@ services:
       SERVER_PORT: "8082"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002"
+      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3005"
     ports:
       - "8082:8082"
     networks:
@@ -177,7 +177,7 @@ services:
       ACCOUNT_CORE_GRPC_PORT: "9091"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3003"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3005"
     ports:
       - "8083:8083"
     networks:
@@ -383,9 +383,9 @@ services:
     environment:
       URLS: >-
         [
-          {"url": "http://localhost:8081/v3/api-docs", "name": "Account Core Service"},
-          {"url": "http://localhost:8083/v3/api-docs", "name": "Party Service"},
-          {"url": "http://localhost:8082/v3/api-docs", "name": "Accounting Service"}
+          {"url": "http://${VM_PUBLIC_IP}:8081/v3/api-docs", "name": "Account Core Service"},
+          {"url": "http://${VM_PUBLIC_IP}:8083/v3/api-docs", "name": "Party Service"},
+          {"url": "http://${VM_PUBLIC_IP}:8082/v3/api-docs", "name": "Accounting Service"}
         ]
     ports:
       - "3005:8080"
