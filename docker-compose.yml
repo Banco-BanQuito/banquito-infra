@@ -354,6 +354,7 @@ services:
       - "3004:80"
     networks:
       - core-net
+      - switch-net
 
   web-personas-frontend:
     image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
