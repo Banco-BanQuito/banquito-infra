@@ -135,10 +135,16 @@ services:
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
       CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "banquito"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
+      RABBITMQ_VHOST: "banquito"
     ports:
       - "8081:8081"
     networks:
       - core-net
+      - switch-net
 
   accounting-service:
     image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
@@ -270,6 +276,7 @@ services:
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
       ACCOUNTING_SERVICE_URL: http://accounting-service:8082/api/v2/accounting/entries
       SERVER_PORT: "8087"
+      COMPENSATION_OUTPUT_DIR: /app/spi-output
     ports:
       - "8087:8087"
     networks:
