@@ -14,9 +14,13 @@ networks:
   core-net:
     driver: bridge
     name: banquito-core-net
+    driver_opts:
+      com.docker.network.driver.mtu: 1460
   switch-net:
     driver: bridge
     name: banquito-switch-net
+    driver_opts:
+      com.docker.network.driver.mtu: 1460
 
 volumes:
   rabbitmq-data:
