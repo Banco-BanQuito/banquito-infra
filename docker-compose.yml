@@ -359,7 +359,7 @@ services:
     container_name: operador-frontend
     restart: on-failure
     ports:
-      - "3004:80"
+      - "3004:8080"
     networks:
       - core-net
       - switch-net
