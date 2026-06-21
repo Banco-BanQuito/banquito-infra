@@ -1,0 +1,6 @@
+projectKey=banquito-infra
+serverUrl=http://localhost:9000
+serverVersion=26.6.0.123539
+dashboardUrl=http://localhost:9000/dashboard?id=banquito-infra
+ceTaskId=9472708c-c0c4-4aa1-8f24-c5efd75cd0df
+ceTaskUrl=http://localhost:9000/api/ce/task?id=9472708c-c0c4-4aa1-8f24-c5efd75cd0df
