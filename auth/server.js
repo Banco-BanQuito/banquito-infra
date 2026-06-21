@@ -1,6 +1,6 @@
 'use strict';
-const http = require('http');
-const crypto = require('crypto');
+const http = require('node:http');
+const crypto = require('node:crypto');
 
 const REQUIRED_VARS = ['JWT_SECRET', 'JWT_ISS'];
 const missing = REQUIRED_VARS.filter(v => !process.env[v]);
@@ -50,7 +50,7 @@ function postJson(baseUrl, path, payload) {
 
 // Intenta autenticar al usuario primero como personal (cajero/operador) en
 // account-core-service y, si no corresponde, como cliente/empresa en party-service.
-// No hay datos de usuario hardcodeados: todo se valida contra la base real.
+// No hay datos de usuario hardcodeados: la validacion es completamente contra la base real.
 async function authenticate(username, password) {
   try {
     const staffRes = await postJson(ACCOUNT_CORE_URL, '/api/v2/auth/login/staff', { username, password });
