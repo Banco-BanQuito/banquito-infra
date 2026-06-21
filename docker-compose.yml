@@ -21,9 +21,16 @@ networks:
     name: banquito-switch-net
     driver_opts:
       com.docker.network.driver.mtu: 1460
+  observability-net:
+    driver: bridge
+    name: banquito-observability-net
+    driver_opts:
+      com.docker.network.driver.mtu: 1460
 
 volumes:
   rabbitmq-data:
+  loki-data:
+  grafana-data:
 
 services:
 
@@ -391,6 +398,52 @@ services:
       - "3005:8080"
     networks:
       - core-net
+
+# ── OBSERVABILIDAD — logs centralizados (Loki + Promtail + Grafana) ───────────
+
+  loki:
+    image: grafana/loki:2.9.8
+    container_name: loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./observability/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - observability-net
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    container_name: promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - ./observability/promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - observability-net
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - observability-net
+    depends_on:
+      - loki
 
 # ── WATCHTOWER — auto-pull de nuevas imágenes ─────────────────────────────────
 
