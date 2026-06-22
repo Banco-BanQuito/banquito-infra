@@ -123,7 +123,7 @@ services:
   account-core-service:
     image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
     container_name: account-core-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
       DB_SCHEMA: account_core
@@ -156,7 +156,7 @@ services:
   accounting-service:
     image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
     container_name: accounting-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
       DB_SCHEMA: accounting
@@ -174,7 +174,7 @@ services:
   party-service:
     image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
     container_name: party-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?sslMode=REQUIRED&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
       DB_USER: ${CLOUD_MYSQL_USER}
@@ -195,7 +195,7 @@ services:
   file-reception-service:
     image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
     container_name: file-reception-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/filedb?sslMode=REQUIRED&serverTimezone=UTC&allowPublicKeyRetrieval=true"
       DB_USER: "${CLOUD_MYSQL_USER}"
@@ -225,7 +225,7 @@ services:
   routing-service:
     image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
     container_name: routing-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
       SPRING_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
@@ -256,7 +256,7 @@ services:
   tariff-service:
     image: ${TARIFF_IMAGE:-ghcr.io/banco-banquito/tariff-service:latest}
     container_name: tariff-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       POSTGRES_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/tariffdb?sslMode=REQUIRED&serverTimezone=UTC&allowPublicKeyRetrieval=true"
       POSTGRES_USER: ${CLOUD_MYSQL_USER}
@@ -273,7 +273,7 @@ services:
   clearinghouse-adapter:
     image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-adapter:latest}
     container_name: clearinghouse-adapter
-    restart: on-failure
+    restart: unless-stopped
     environment:
       SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -296,7 +296,7 @@ services:
   report-service:
     image: ${REPORT_IMAGE:-ghcr.io/banco-banquito/report-service:latest}
     container_name: report-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
       NOTIFICATION_SERVICE_URL: http://notification-service:8089
@@ -310,7 +310,7 @@ services:
   notification-service:
     image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
     container_name: notification-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       SMTP_HOST: "${SMTP_HOST:-smtp.gmail.com}"
       SMTP_PORT: "${SMTP_PORT:-587}"
@@ -331,7 +331,7 @@ services:
   auth-service:
     image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
     container_name: auth-service
-    restart: on-failure
+    restart: unless-stopped
     environment:
       JWT_SECRET: "${JWT_SECRET}"
       JWT_ISS: "${JWT_ISS}"
@@ -348,7 +348,7 @@ services:
   teller-frontend:
     image: ${TELLER_FRONTEND_IMAGE:-ghcr.io/banco-banquito/teller-frontend:latest}
     container_name: teller-frontend
-    restart: on-failure
+    restart: unless-stopped
     ports:
       - "3001:8080"
     networks:
@@ -357,7 +357,7 @@ services:
   operador-frontend:
     image: ${OPERADOR_FRONTEND_IMAGE:-ghcr.io/banco-banquito/operador-frontend:latest}
     container_name: operador-frontend
-    restart: on-failure
+    restart: unless-stopped
     ports:
       - "3004:8080"
     networks:
@@ -367,7 +367,7 @@ services:
   web-personas-frontend:
     image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
     container_name: web-personas-frontend
-    restart: on-failure
+    restart: unless-stopped
     ports:
       - "3002:8080"
     networks:
@@ -376,7 +376,7 @@ services:
   web-empresas-frontend:
     image: ${WEB_EMPRESAS_IMAGE:-ghcr.io/banco-banquito/web-empresas-frontend:latest}
     container_name: web-empresas-frontend
-    restart: on-failure
+    restart: unless-stopped
     ports:
       - "3003:8080"
     networks:
@@ -387,7 +387,7 @@ services:
   swagger-ui:
     image: swaggerapi/swagger-ui:latest
     container_name: swagger-ui
-    restart: on-failure
+    restart: unless-stopped
     environment:
       URLS: >-
         [
