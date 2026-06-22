@@ -183,7 +183,7 @@ services:
       ACCOUNT_CORE_GRPC_HOST: account-core-service
       ACCOUNT_CORE_GRPC_PORT: "9091"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
       CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3005"
     ports:
       - "8083:8083"
@@ -213,7 +213,7 @@ services:
       APP_CORE_VALIDATION_ENABLED: "false"
       APP_FORCE_BUSINESS_DAY: "true"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8084:8084"
     networks:
@@ -264,7 +264,7 @@ services:
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
       SERVER_PORT: "8086"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "0"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8086:8086"
     networks:
