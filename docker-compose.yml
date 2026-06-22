@@ -176,7 +176,7 @@ services:
     container_name: party-service
     restart: unless-stopped
     environment:
-      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?sslMode=REQUIRED&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
+      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?sslMode=REQUIRED&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&defaultAuthenticationPlugin=caching_sha2_password&authenticationPlugins=caching_sha2_password"
       DB_USER: ${CLOUD_MYSQL_USER}
       DB_PASS: ${CLOUD_MYSQL_PASS}
       SERVER_PORT: "8083"
