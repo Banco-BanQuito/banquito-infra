@@ -1,12 +1,20 @@
 services:
 
-  # ── Servicios que se construyen desde código local ────────────────────────
+  kong-core:
+    volumes:
+      - /tmp/kong-core-local.yml:/kong/declarative/kong.yml:ro
+
+  kong-switch:
+    volumes:
+      - /tmp/kong-switch-local.yml:/kong/declarative/kong.yml:ro
 
   account-core-service:
+    image: banquito/account-core-service:local
     build:
       context: ../banquito-account-core-service
 
   accounting-service:
+    image: banquito/accounting-service:local
     build:
       context: ../banquito-accounting-service
       dockerfile_inline: |
@@ -21,12 +29,16 @@ services:
         COPY --from=builder /app/target/*.jar app.jar
         EXPOSE 8082
         ENTRYPOINT ["java", "-jar", "app.jar"]
+    environment:
+      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:5173"
 
   routing-service:
+    image: banquito/routing-service:local
     build:
       context: ../banquito-routing-service
 
   clearinghouse-service:
+    image: banquito/clearinghouse-service:local
     build:
       context: ../banquito-clearinghouse-service/banquito-clearinghouse-service
       dockerfile_inline: |
@@ -44,6 +56,7 @@ services:
         ENTRYPOINT ["java", "-jar", "app.jar"]
 
   tariff-service:
+    image: banquito/tariff-service:local
     build:
       context: ../banquito-tariff-service/banquito-tariff-service
       dockerfile_inline: |
@@ -60,6 +73,7 @@ services:
         ENTRYPOINT ["java", "-jar", "app.jar"]
 
   party-service:
+    image: banquito/party-service:local
     build:
       context: ../banquito-party-service
       dockerfile_inline: |
@@ -76,34 +90,53 @@ services:
         ENTRYPOINT ["java", "-jar", "app.jar"]
 
   file-reception-service:
+    image: banquito/file-reception-service:local
     build:
       context: ../banquito-file-reception-service
 
   notification-service:
+    image: banquito/notification-service:local
     build:
       context: ../banquito-notification-service
 
   report-service:
+    image: banquito/report-service:local
     build:
       context: ../banquito-report-service
 
+  auth-service:
+    image: banquito/auth-service:local
+    build:
+      context: ./auth
+
   teller-frontend:
+    image: banquito/teller-frontend:local
     build:
       context: ../banquito-teller-frontend
+      args:
+        VITE_ACCOUNT_API_BASE_URL: http://localhost:8081/api/v2
+        VITE_PARTY_API_BASE_URL: http://localhost:8083/api/v2
+        VITE_ACCOUNTING_API_BASE_URL: http://localhost:8082/api/v2
 
   operador-frontend:
+    image: banquito/operador-frontend:local
     build:
       context: ../banquito-frontend-web-operador
-
-  web-empresas-frontend:
-    build:
-      context: ../banquito-web-empresas-frontend
+      args:
+        VITE_ACCOUNT_API_BASE_URL: http://localhost:8081/api/v2
+        VITE_PARTY_API_BASE_URL: http://localhost:8083/api/v2
+        VITE_ACCOUNTING_API_BASE_URL: http://localhost:8082/api/v2
 
   web-personas-frontend:
+    image: banquito/web-personas-frontend:local
     build:
       context: ../banquito-web-personas-frontend
 
-  # ── Auth service: construido desde infra/auth ─────────────────────────────
-  auth-service:
+  web-empresas-frontend:
+    image: banquito/web-empresas-frontend:local
     build:
-      context: ./auth
+      context: ../banquito-web-empresas-frontend
+
+  watchtower:
+    profiles:
+      - production
