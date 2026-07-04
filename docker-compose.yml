@@ -1,14 +1,25 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# BanQuito V2 — Infraestructura
+# BanQuito V2 — Infraestructura compartida
+#
+# Core y Switch son bounded contexts independientes: sus microservicios y
+# frontends propios viven en docker-compose.core.yml y docker-compose.switch.yml
+# respectivamente (no se mezclan). Este archivo solo define lo genuinamente
+# transversal a ambos dominios (broker, notificaciones, auth, observabilidad)
+# e incluye los otros dos archivos para que "docker compose up" siga
+# levantando el sistema completo con un solo comando.
 #
 # Bases de datos: Cloud SQL (PostgreSQL) y MongoDB Atlas  → env vars en .env
 # Broker:         RabbitMQ                                → contenedor Docker
 #
 # Comandos:
 #   cp .env.example .env        → llena con credenciales reales
-#   docker compose up -d        → levanta todo
+#   docker compose up -d        → levanta todo (Core + Switch + compartido)
 #   docker compose down         → apaga (sin borrar datos)
 # ══════════════════════════════════════════════════════════════════════════════
+
+include:
+  - docker-compose.core.yml
+  - docker-compose.switch.yml
 
 networks:
   core-net:
@@ -60,255 +71,6 @@ services:
       retries: 5
       start_period: 30s
 
-# ── KONG API GATEWAY ──────────────────────────────────────────────────────────
-
-  kong-core:
-    image: kong:3.6
-    container_name: kong-core
-    restart: unless-stopped
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      KONG_PROXY_LISTEN: "0.0.0.0:8000"
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-    volumes:
-      - ./kong/core/kong.yml:/kong/declarative/kong.yml:ro
-    ports:
-      - "8000:8000"
-      - "8001:8001"
-    networks:
-      - core-net
-      - switch-net
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  kong-switch:
-    image: kong:3.6
-    container_name: kong-switch
-    restart: unless-stopped
-    environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
-      KONG_PROXY_LISTEN: "0.0.0.0:8000"
-      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
-      KONG_PROXY_ACCESS_LOG: /dev/stdout
-      KONG_ADMIN_ACCESS_LOG: /dev/stdout
-      KONG_PROXY_ERROR_LOG: /dev/stderr
-      KONG_ADMIN_ERROR_LOG: /dev/stderr
-    volumes:
-      - ./kong/switch/kong.yml:/kong/declarative/kong.yml:ro
-    ports:
-      - "8010:8000"
-      - "8011:8001"
-    networks:
-      - switch-net
-      - core-net
-    healthcheck:
-      test: ["CMD", "kong", "health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-# ── MICROSERVICIOS CORE ───────────────────────────────────────────────────────
-
-  account-core-service:
-    image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
-    container_name: account-core-service
-    restart: unless-stopped
-    environment:
-      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
-      DB_SCHEMA: account_core
-      DB_USER: ${CLOUD_DB_USER}
-      DB_PASS: ${CLOUD_DB_PASS}
-      ACCOUNTING_SERVICE_URL: http://accounting-service:8082
-      ACCOUNTING_GRPC_HOST: accounting-service
-      ACCOUNTING_GRPC_PORT: "9092"
-      PARTY_SERVICE_URL: http://party-service:8083
-      PARTY_GRPC_HOST: party-service
-      PARTY_GRPC_PORT: "9093"
-      NOTIFICATION_GRPC_HOST: notification-service
-      NOTIFICATION_GRPC_PORT: "9092"
-      CUT_OFF_TIME: "20:00"
-      SERVER_PORT: "8081"
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3004,http://${VM_PUBLIC_IP}:3005"
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: "banquito"
-      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
-      RABBITMQ_VHOST: "banquito"
-    ports:
-      - "8081:8081"
-    networks:
-      - core-net
-      - switch-net
-
-  accounting-service:
-    image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
-    container_name: accounting-service
-    restart: unless-stopped
-    environment:
-      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
-      DB_SCHEMA: accounting
-      DB_USER: ${CLOUD_DB_USER}
-      DB_PASS: ${CLOUD_DB_PASS}
-      SERVER_PORT: "8082"
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3005"
-    ports:
-      - "8082:8082"
-    networks:
-      - core-net
-
-  party-service:
-    image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
-    container_name: party-service
-    restart: unless-stopped
-    environment:
-      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?sslMode=REQUIRED&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
-      DB_USER: ${CLOUD_MYSQL_USER}
-      DB_PASS: ${CLOUD_MYSQL_PASS}
-      SERVER_PORT: "8083"
-      ACCOUNT_CORE_GRPC_HOST: account-core-service
-      ACCOUNT_CORE_GRPC_PORT: "9091"
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3005"
-    ports:
-      - "8083:8083"
-    networks:
-      - core-net
-
-# ── MICROSERVICIOS SWITCH ─────────────────────────────────────────────────────
-
-  file-reception-service:
-    image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
-    container_name: file-reception-service
-    restart: unless-stopped
-    environment:
-      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/filedb?sslMode=REQUIRED&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-      DB_USER: "${CLOUD_MYSQL_USER}"
-      DB_PASS: "${CLOUD_MYSQL_PASS}"
-      MONGO_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      RABBITMQ_HOST: "rabbitmq"
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: "banquito"
-      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
-      RABBITMQ_VHOST: "banquito"
-      ROUTING_QUEUE: payment.lines.queue
-      CUT_OFF_TIME: "18:00"
-      APP_CUTOFF_HOUR: "23"
-      SERVER_PORT: "8084"
-      APP_CORE_VALIDATION_ENABLED: "false"
-      APP_FORCE_BUSINESS_DAY: "true"
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-    ports:
-      - "8084:8084"
-    networks:
-      - switch-net
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  routing-service:
-    image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
-    container_name: routing-service
-    restart: unless-stopped
-    environment:
-      SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      SPRING_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: banquito
-      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
-      SPRING_RABBITMQ_VIRTUAL_HOST: banquito
-      RABBITMQ_QUEUE: payment.lines.queue
-      RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      ACCOUNT_CORE_GRPC_HOST: kong-core
-      ACCOUNT_CORE_GRPC_PORT: "8000"
-      TARIFF_SERVICE_GRPC_HOST: tariff-service
-      TARIFF_SERVICE_GRPC_PORT: "9091"
-      NOTIFICATION_SERVICE_GRPC_HOST: notification-service
-      NOTIFICATION_SERVICE_GRPC_PORT: "9092"
-      CORE_GATEWAY_URL: "http://account-core-service:8081"
-      SERVER_PORT: "8085"
-    ports:
-      - "8085:8085"
-    networks:
-      - switch-net
-      - core-net
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  tariff-service:
-    image: ${TARIFF_IMAGE:-ghcr.io/banco-banquito/tariff-service:latest}
-    container_name: tariff-service
-    restart: unless-stopped
-    environment:
-      POSTGRES_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/tariffdb?sslMode=REQUIRED&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-      POSTGRES_USER: ${CLOUD_MYSQL_USER}
-      POSTGRES_PASSWORD: ${CLOUD_MYSQL_PASS}
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
-      SERVER_PORT: "8086"
-      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
-      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
-    ports:
-      - "8086:8086"
-    networks:
-      - switch-net
-
-  clearinghouse-service:
-    image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-service:latest}
-    container_name: clearinghouse-service
-    restart: unless-stopped
-    environment:
-      SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: "5672"
-      SPRING_RABBITMQ_USERNAME: banquito
-      SPRING_RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
-      SPRING_RABBITMQ_VIRTUAL_HOST: banquito
-      RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      ACCOUNTING_SERVICE_URL: http://accounting-service:8082/api/v2/accounting/entries
-      SERVER_PORT: "8087"
-      COMPENSATION_OUTPUT_DIR: /app/spi-output
-      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3004,http://${VM_PUBLIC_IP}:3005"
-    ports:
-      - "8087:8087"
-    networks:
-      - switch-net
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  report-service:
-    image: ${REPORT_IMAGE:-ghcr.io/banco-banquito/report-service:latest}
-    container_name: report-service
-    restart: unless-stopped
-    environment:
-      MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      NOTIFICATION_SERVICE_URL: http://notification-service:8089
-      SERVER_PORT: "8088"
-      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3004,http://${VM_PUBLIC_IP}:3005"
-    ports:
-      - "8088:8088"
-    networks:
-      - switch-net
-      - core-net
-
   notification-service:
     image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
     container_name: notification-service
@@ -345,16 +107,7 @@ services:
       - core-net
       - switch-net
 
-# ── FRONTENDS ─────────────────────────────────────────────────────────────────
-
-  teller-frontend:
-    image: ${TELLER_FRONTEND_IMAGE:-ghcr.io/banco-banquito/teller-frontend:latest}
-    container_name: teller-frontend
-    restart: unless-stopped
-    ports:
-      - "3001:8080"
-    networks:
-      - core-net
+# ── FRONTEND TRANSVERSAL (usa pantallas de Core y de Switch) ─────────────────
 
   operador-frontend:
     image: ${OPERADOR_FRONTEND_IMAGE:-ghcr.io/banco-banquito/operador-frontend:latest}
@@ -365,42 +118,6 @@ services:
     networks:
       - core-net
       - switch-net
-
-  web-personas-frontend:
-    image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
-    container_name: web-personas-frontend
-    restart: unless-stopped
-    ports:
-      - "3002:8080"
-    networks:
-      - core-net
-
-  web-empresas-frontend:
-    image: ${WEB_EMPRESAS_IMAGE:-ghcr.io/banco-banquito/web-empresas-frontend:latest}
-    container_name: web-empresas-frontend
-    restart: unless-stopped
-    ports:
-      - "3003:8080"
-    networks:
-      - switch-net
-
-# ── SWAGGER UI — documentación agregada de los microservicios ─────────────────
-
-  swagger-ui:
-    image: swaggerapi/swagger-ui:latest
-    container_name: swagger-ui
-    restart: unless-stopped
-    environment:
-      URLS: >-
-        [
-          {"url": "http://${VM_PUBLIC_IP}:8081/v3/api-docs", "name": "Account Core Service"},
-          {"url": "http://${VM_PUBLIC_IP}:8083/v3/api-docs", "name": "Party Service"},
-          {"url": "http://${VM_PUBLIC_IP}:8082/v3/api-docs", "name": "Accounting Service"}
-        ]
-    ports:
-      - "3005:8080"
-    networks:
-      - core-net
 
 # ── OBSERVABILIDAD — logs centralizados (Loki + Promtail + Grafana) ───────────
 

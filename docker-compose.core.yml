@@ -1,0 +1,150 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# BanQuito V2 — Dominio Core de Cuentas
+#
+# Microservicios y frontends propios del bounded context Core (transaccional +
+# contable). NO declarar aquí infraestructura compartida con el Switch
+# (RabbitMQ, notification-service, auth-service, observabilidad): eso vive en
+# docker-compose.yml, que incluye este archivo vía "include:".
+# ══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+# ── KONG API GATEWAY (Core) ───────────────────────────────────────────────────
+
+  kong-core:
+    image: kong:3.6
+    container_name: kong-core
+    restart: unless-stopped
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /kong/declarative/kong.yml
+      KONG_PROXY_LISTEN: "0.0.0.0:8000"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+    volumes:
+      - ./kong/core/kong.yml:/kong/declarative/kong.yml:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    networks:
+      - core-net
+      - switch-net
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ── MICROSERVICIOS CORE ───────────────────────────────────────────────────────
+
+  account-core-service:
+    image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
+    container_name: account-core-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
+      DB_SCHEMA: account_core
+      DB_USER: ${CLOUD_DB_USER}
+      DB_PASS: ${CLOUD_DB_PASS}
+      ACCOUNTING_SERVICE_URL: http://accounting-service:8082
+      ACCOUNTING_GRPC_HOST: accounting-service
+      ACCOUNTING_GRPC_PORT: "9092"
+      PARTY_SERVICE_URL: http://party-service:8083
+      PARTY_GRPC_HOST: party-service
+      PARTY_GRPC_PORT: "9093"
+      NOTIFICATION_GRPC_HOST: notification-service
+      NOTIFICATION_GRPC_PORT: "9092"
+      CUT_OFF_TIME: "20:00"
+      SERVER_PORT: "8081"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3004,http://${VM_PUBLIC_IP}:3005"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: "banquito"
+      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
+      RABBITMQ_VHOST: "banquito"
+    ports:
+      - "8081:8081"
+    networks:
+      - core-net
+      - switch-net
+
+  accounting-service:
+    image: ${ACCOUNTING_IMAGE:-ghcr.io/banco-banquito/accounting-service:latest}
+    container_name: accounting-service
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://${CLOUD_SQL_HOST}:5432/banquito
+      DB_SCHEMA: accounting
+      DB_USER: ${CLOUD_DB_USER}
+      DB_PASS: ${CLOUD_DB_PASS}
+      SERVER_PORT: "8082"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:5173,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3005"
+    ports:
+      - "8082:8082"
+    networks:
+      - core-net
+
+  party-service:
+    image: ${PARTY_IMAGE:-ghcr.io/banco-banquito/party-service:latest}
+    container_name: party-service
+    restart: unless-stopped
+    environment:
+      DB_URL: "jdbc:mysql://${CLOUD_MYSQL_HOST}:3306/partydb?sslMode=REQUIRED&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
+      DB_USER: ${CLOUD_MYSQL_USER}
+      DB_PASS: ${CLOUD_MYSQL_PASS}
+      SERVER_PORT: "8083"
+      ACCOUNT_CORE_GRPC_HOST: account-core-service
+      ACCOUNT_CORE_GRPC_PORT: "9091"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3005"
+    ports:
+      - "8083:8083"
+    networks:
+      - core-net
+
+# ── FRONTENDS CORE ────────────────────────────────────────────────────────────
+
+  teller-frontend:
+    image: ${TELLER_FRONTEND_IMAGE:-ghcr.io/banco-banquito/teller-frontend:latest}
+    container_name: teller-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:8080"
+    networks:
+      - core-net
+
+  web-personas-frontend:
+    image: ${WEB_PERSONAS_IMAGE:-ghcr.io/banco-banquito/web-personas-frontend:latest}
+    container_name: web-personas-frontend
+    restart: unless-stopped
+    ports:
+      - "3002:8080"
+    networks:
+      - core-net
+
+# ── SWAGGER UI — documentación agregada de los microservicios del Core ───────
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    restart: unless-stopped
+    environment:
+      URLS: >-
+        [
+          {"url": "http://${VM_PUBLIC_IP}:8081/v3/api-docs", "name": "Account Core Service"},
+          {"url": "http://${VM_PUBLIC_IP}:8083/v3/api-docs", "name": "Party Service"},
+          {"url": "http://${VM_PUBLIC_IP}:8082/v3/api-docs", "name": "Accounting Service"}
+        ]
+    ports:
+      - "3005:8080"
+    networks:
+      - core-net
