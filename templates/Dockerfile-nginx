@@ -1,37 +1,18 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# Plantilla Dockerfile — Frontend React + Vite (Node 18 + Nginx)
-#
-# USO:
-#   1. Copia este archivo a la raíz de tu repo frontend como "Dockerfile"
-#   2. No necesitas cambiar nada — Nginx siempre escucha en el puerto 80
-#
-# Configuración de la API en el frontend:
-#   - teller-frontend y web-personas-frontend → apunta a http://localhost:8000
-#   - web-empresas-frontend                   → apunta a http://localhost:8010
-#
-# Eso se configura en el .env de Vite antes de hacer el build:
-#   VITE_API_BASE_URL=http://localhost:8000
-# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Etapa 1: Build ────────────────────────────────────────────────────────────
 FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copia package.json primero para cachear node_modules
 COPY package*.json ./
 RUN npm ci
 
 COPY . .
 RUN npm run build
 
-# ── Etapa 2: Servidor Nginx ───────────────────────────────────────────────────
 FROM nginx:alpine
 
-# Copia el build de Vite a la carpeta pública de Nginx
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Configuración de Nginx para React Router (SPA)
 RUN printf 'server {\n\
     listen 80;\n\
     root /usr/share/nginx/html;\n\

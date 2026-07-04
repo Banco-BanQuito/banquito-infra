@@ -1,15 +1,6 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# BanQuito V2 — Dominio Switch de Pagos Masivos
-#
-# Microservicios y frontends propios del bounded context Switch (enrutamiento
-# On-Us/Off-Us). NO declarar aquí infraestructura compartida con el Core
-# (RabbitMQ, notification-service, auth-service, observabilidad): eso vive en
-# docker-compose.yml, que incluye este archivo vía "include:".
-# ══════════════════════════════════════════════════════════════════════════════
 
 services:
 
-# ── KONG API GATEWAY (Switch) ─────────────────────────────────────────────────
 
   kong-switch:
     image: kong:3.6
@@ -39,7 +30,6 @@ services:
       retries: 5
       start_period: 30s
 
-# ── MICROSERVICIOS SWITCH ─────────────────────────────────────────────────────
 
   file-reception-service:
     image: ${FILE_RECEPTION_IMAGE:-ghcr.io/banco-banquito/file-reception-service:latest}
@@ -162,7 +152,6 @@ services:
       - switch-net
       - core-net
 
-# ── FRONTEND SWITCH ───────────────────────────────────────────────────────────
 
   web-empresas-frontend:
     image: ${WEB_EMPRESAS_IMAGE:-ghcr.io/banco-banquito/web-empresas-frontend:latest}

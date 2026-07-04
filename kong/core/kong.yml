@@ -1,21 +1,7 @@
 _format_version: "3.0"
 _transform: true
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Kong Core — Configuración Declarativa
-# Proxy: http://localhost:8000
-# Admin: http://localhost:8001
-#
-# Rutas expuestas:
-#   POST /api/v2/auth/login         → auth-service:8090   (PÚBLICA — sin JWT)
-#   /api/v2/accounts/**             → account-core-service:8081  (requiere JWT)
-#   /api/v2/payments/batch-*        → account-core-service:8081  (requiere JWT)
-#   /api/v2/accounting/**           → accounting-service:8082    (requiere JWT)
-#   /api/v2/customers/**            → party-service:8083         (requiere JWT)
-# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Consumidor JWT — la clave debe coincidir con el claim "iss" del token ─────
-# El auth-service firma tokens con: iss=${JWT_ISS}, secret=${JWT_SECRET}
 consumers:
   - username: banquito-app
     jwt_secrets:
@@ -25,7 +11,6 @@ consumers:
 
 services:
 
-  # ── auth-service (RUTA PÚBLICA — sin plugin JWT) ──────────────────────────
   - name: auth-service
     url: http://auth-service:8090
     connect_timeout: 5000
@@ -41,7 +26,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── account-core-service ──────────────────────────────────────────────────
   - name: account-core-service
     url: http://account-core-service:8081
     connect_timeout: 10000
@@ -54,8 +38,6 @@ services:
           secret_is_base64: false
     routes:
 
-      # GET /api/v2/accounts/{id}/balance
-      # GET /api/v2/accounts/{id}/transactions
       - name: accounts-read
         paths:
           - /api/v2/accounts
@@ -64,9 +46,6 @@ services:
         strip_path: false
         preserve_host: false
 
-      # POST /api/v2/accounts/teller/deposit
-      # POST /api/v2/accounts/teller/withdrawal
-      # POST /api/v2/accounts/transfer/p2p
       - name: accounts-write
         paths:
           - /api/v2/accounts
@@ -75,7 +54,6 @@ services:
         strip_path: false
         preserve_host: false
 
-      # POST /api/v2/payments/batch-credit  (llamado desde Switch vía este Kong)
       - name: payments-batch-credit
         paths:
           - /api/v2/payments/batch-credit
@@ -84,7 +62,6 @@ services:
         strip_path: false
         preserve_host: false
 
-      # POST /api/v2/payments/corporate-debit (llamado desde Switch vía este Kong)
       - name: payments-corporate-debit
         paths:
           - /api/v2/payments/corporate-debit
@@ -93,7 +70,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── accounting-service ────────────────────────────────────────────────────
   - name: accounting-service
     url: http://accounting-service:8082
     connect_timeout: 10000
@@ -106,8 +82,6 @@ services:
           secret_is_base64: false
     routes:
 
-      # POST /api/v2/accounting/entries
-      # POST /api/v2/accounting/eod
       - name: accounting-write
         paths:
           - /api/v2/accounting
@@ -116,7 +90,6 @@ services:
         strip_path: false
         preserve_host: false
 
-      # GET /api/v2/accounting/trial-balance
       - name: accounting-read
         paths:
           - /api/v2/accounting
@@ -125,9 +98,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── account-core-service (gRPC) — usado por routing-service vía Kong ─────
-  # routing-service (switch-net) → kong-core:8000 (gRPC) → account-core:9091 (core-net)
-  # Esto garantiza que Switch→Core pase por el API Gateway (requisito arquitectónico)
   - name: account-core-grpc
     protocol: grpc
     host: account-core-service
@@ -141,7 +111,6 @@ services:
         paths:
           - /com.banquito.core.account.AccountCoreService
 
-  # ── party-service ─────────────────────────────────────────────────────────
   - name: party-service
     url: http://party-service:8083
     connect_timeout: 10000
@@ -154,8 +123,6 @@ services:
           secret_is_base64: false
     routes:
 
-      # GET /api/v2/customers/{id}
-      # GET /api/v2/customers/by-account/{accountNumber}
       - name: customers-read
         paths:
           - /api/v2/customers

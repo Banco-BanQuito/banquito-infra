@@ -1,15 +1,6 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# BanQuito V2 — Dominio Core de Cuentas
-#
-# Microservicios y frontends propios del bounded context Core (transaccional +
-# contable). NO declarar aquí infraestructura compartida con el Switch
-# (RabbitMQ, notification-service, auth-service, observabilidad): eso vive en
-# docker-compose.yml, que incluye este archivo vía "include:".
-# ══════════════════════════════════════════════════════════════════════════════
 
 services:
 
-# ── KONG API GATEWAY (Core) ───────────────────────────────────────────────────
 
   kong-core:
     image: kong:3.6
@@ -39,7 +30,6 @@ services:
       retries: 5
       start_period: 30s
 
-# ── MICROSERVICIOS CORE ───────────────────────────────────────────────────────
 
   account-core-service:
     image: ${ACCOUNT_CORE_IMAGE:-ghcr.io/banco-banquito/account-core-service:latest}
@@ -111,7 +101,6 @@ services:
     networks:
       - core-net
 
-# ── FRONTENDS CORE ────────────────────────────────────────────────────────────
 
   teller-frontend:
     image: ${TELLER_FRONTEND_IMAGE:-ghcr.io/banco-banquito/teller-frontend:latest}
@@ -131,7 +120,6 @@ services:
     networks:
       - core-net
 
-# ── SWAGGER UI — documentación agregada de los microservicios del Core ───────
 
   swagger-ui:
     image: swaggerapi/swagger-ui:latest

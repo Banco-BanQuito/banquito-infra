@@ -1,21 +1,3 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# BanQuito V2 — Infraestructura compartida
-#
-# Core y Switch son bounded contexts independientes: sus microservicios y
-# frontends propios viven en docker-compose.core.yml y docker-compose.switch.yml
-# respectivamente (no se mezclan). Este archivo solo define lo genuinamente
-# transversal a ambos dominios (broker, notificaciones, auth, observabilidad)
-# e incluye los otros dos archivos para que "docker compose up" siga
-# levantando el sistema completo con un solo comando.
-#
-# Bases de datos: Cloud SQL (PostgreSQL) y MongoDB Atlas  → env vars en .env
-# Broker:         RabbitMQ                                → contenedor Docker
-#
-# Comandos:
-#   cp .env.example .env        → llena con credenciales reales
-#   docker compose up -d        → levanta todo (Core + Switch + compartido)
-#   docker compose down         → apaga (sin borrar datos)
-# ══════════════════════════════════════════════════════════════════════════════
 
 include:
   - docker-compose.core.yml
@@ -45,7 +27,6 @@ volumes:
 
 services:
 
-# ── RABBITMQ ──────────────────────────────────────────────────────────────────
 
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -90,7 +71,6 @@ services:
       - core-net
 
 
-# ── AUTH SERVICE ──────────────────────────────────────────────────────────────
 
   auth-service:
     image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
@@ -107,7 +87,6 @@ services:
       - core-net
       - switch-net
 
-# ── FRONTEND TRANSVERSAL (usa pantallas de Core y de Switch) ─────────────────
 
   operador-frontend:
     image: ${OPERADOR_FRONTEND_IMAGE:-ghcr.io/banco-banquito/operador-frontend:latest}
@@ -119,7 +98,6 @@ services:
       - core-net
       - switch-net
 
-# ── OBSERVABILIDAD — logs centralizados (Loki + Promtail + Grafana) ───────────
 
   loki:
     image: grafana/loki:2.9.8
@@ -165,7 +143,6 @@ services:
     depends_on:
       - loki
 
-# ── WATCHTOWER — auto-pull de nuevas imágenes ─────────────────────────────────
 
   watchtower:
     image: containrrr/watchtower
