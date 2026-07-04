@@ -55,7 +55,9 @@ services:
       RABBITMQ_USERNAME: "banquito"
       RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
       RABBITMQ_VHOST: "banquito"
-      ROUTING_QUEUE: payment.lines.queue
+      APP_RABBIT_QUEUE_ONUS: payment.lines.onus.queue
+      APP_RABBIT_QUEUE_OFFUS: payment.lines.offus.queue
+      APP_RABBIT_QUEUE_INVALID: payment.lines.invalid.queue
       CUT_OFF_TIME: "18:00"
       APP_CUTOFF_HOUR: "23"
       SERVER_PORT: "8084"
@@ -83,7 +85,9 @@ services:
       RABBITMQ_USERNAME: banquito
       RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
-      RABBITMQ_QUEUE: payment.lines.queue
+      RABBITMQ_ONUS_QUEUE: payment.lines.onus.queue
+      RABBITMQ_OFFUS_QUEUE: payment.lines.offus.queue
+      RABBITMQ_INVALID_QUEUE: payment.lines.invalid.queue
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
       ACCOUNT_CORE_GRPC_HOST: kong-core
       ACCOUNT_CORE_GRPC_PORT: "8000"
