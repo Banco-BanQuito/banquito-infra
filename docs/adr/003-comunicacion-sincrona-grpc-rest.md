@@ -13,7 +13,7 @@ El proyecto exige comunicación binaria (gRPC) obligatoria para llamadas inter-m
 - **Al cruzar de un dominio a otro**: se usa **REST/HTTP**, tratando al otro dominio como si fuera un consumidor externo.
   - `routing-service` (Switch) → `account-core-service` (Core): REST.
   - `file-reception-service` (Switch) → `account-core-service` (Core): REST.
-  - `clearinghouse-adapter` (Switch) → `accounting-service` (Core): REST.
+  - `clearinghouse-service` (Switch) → `accounting-service` (Core): REST.
 
 ## Por qué esta regla y no gRPC en todos lados
 Un Bounded Context no debe depender del esquema interno (los `.proto`) de otro Bounded Context — eso acoplaría su evolución. Tratar la frontera entre Core y Switch igual que se trataría una integración con un sistema externo (vía contrato HTTP/REST versionado) es coherente con DDD: el dominio ajeno se consume como una API pública, no como una llamada interna.

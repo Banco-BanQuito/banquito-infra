@@ -26,9 +26,9 @@ services:
     build:
       context: ../banquito-routing-service
 
-  clearinghouse-adapter:
+  clearinghouse-service:
     build:
-      context: ../banquito-clearinghouse-adapter/banquito-clearinghouse-adapter
+      context: ../banquito-clearinghouse-service/banquito-clearinghouse-service
       dockerfile_inline: |
         FROM maven:3.9-eclipse-temurin-21 AS builder
         WORKDIR /app

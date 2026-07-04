@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════════════════════════
--- PASO 10 — Schema tariffdb (Johan — tariff-service + clearinghouse-adapter)
+-- PASO 10 — Schema tariffdb (Johan — tariff-service + clearinghouse-service)
 -- ══════════════════════════════════════════════════════════════════════════
 \c tariffdb
 

@@ -13,7 +13,7 @@
 #   file-reception-service 8084
 #   routing-service        8085
 #   tariff-service         8086
-#   clearinghouse-adapter  8087
+#   clearinghouse-service  8087
 #   report-service         8088
 #   notification-service   8089
 # ══════════════════════════════════════════════════════════════════════════════

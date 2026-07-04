@@ -270,9 +270,9 @@ services:
     networks:
       - switch-net
 
-  clearinghouse-adapter:
-    image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-adapter:latest}
-    container_name: clearinghouse-adapter
+  clearinghouse-service:
+    image: ${CLEARINGHOUSE_IMAGE:-ghcr.io/banco-banquito/clearinghouse-service:latest}
+    container_name: clearinghouse-service
     restart: unless-stopped
     environment:
       SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
