@@ -1,25 +1,7 @@
 _format_version: "3.0"
 _transform: true
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Kong Switch — Configuración Declarativa
-# Proxy: http://localhost:8010
-# Admin: http://localhost:8011
-#
-# Rutas expuestas:
-#   POST /api/v2/auth/login                    → auth-service:8090        (PÚBLICA — sin JWT)
-#   POST /api/v2/payments/batches              → file-reception-service:8084  (requiere JWT)
-#   GET  /api/v2/payments/batches/{id}/status  → routing-service:8085         (requiere JWT)
-#   GET  /api/v2/payments/batches/{id}/report  → report-service:8088          (requiere JWT)
-#   GET  /api/v2/payments/receipts/{id}        → report-service:8088          (requiere JWT)
-#
-# NO expuestas (solo comunicación interna):
-#   /api/v2/tariff/**
-#   /api/v2/notifications/**
-#   /api/v2/clearing/**
-# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Consumidor JWT — mismo secreto que Kong Core ──────────────────────────────
 consumers:
   - username: banquito-app
     jwt_secrets:
@@ -29,8 +11,6 @@ consumers:
 
 plugins:
 
-  # RF-05: Rate limiting global en Kong Switch
-  # Límite por IP: 100 req/min para batch upload, 300 req/min para consultas
   - name: rate-limiting
     config:
       minute: 100
@@ -64,7 +44,6 @@ plugins:
 
 services:
 
-  # ── auth-service (RUTA PÚBLICA — sin plugin JWT) ──────────────────────────
   - name: auth-service
     url: http://auth-service:8090
     connect_timeout: 5000
@@ -80,7 +59,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── file-reception-service ────────────────────────────────────────────────
   - name: file-reception-service
     url: http://file-reception-service:8084
     connect_timeout: 10000
@@ -88,8 +66,6 @@ services:
     read_timeout: 120000
     routes:
 
-      # POST /api/v2/payments/batches
-      # RF-02: Carga de archivo → validación estructural → 202 inmediato → RabbitMQ async
       - name: batches-upload
         paths:
           - /api/v2/payments/batches
@@ -98,7 +74,6 @@ services:
           - OPTIONS
         strip_path: false
         preserve_host: false
-      # GET, POST, DELETE /api/v2/payments/routing-codes
       - name: routing-codes-catalog
         paths:
           - /api/v2/payments/routing-codes
@@ -110,7 +85,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  # ── routing-service ───────────────────────────────────────────────────────
   - name: routing-service
     url: http://routing-service:8085
     connect_timeout: 10000
@@ -118,8 +92,6 @@ services:
     read_timeout: 30000
     routes:
 
-      # GET /api/v2/payments/batches/{id}/status
-      # Regex con mayor prioridad que la ruta de report
       - name: batch-status
         paths:
           - ~/api/v2/payments/batches/[^/]+/status$
@@ -130,7 +102,6 @@ services:
         preserve_host: false
         regex_priority: 100
 
-  # ── report-service ────────────────────────────────────────────────────────
   - name: report-service
     url: http://report-service:8088
     connect_timeout: 10000
@@ -138,7 +109,6 @@ services:
     read_timeout: 60000
     routes:
 
-      # GET /api/v2/payments/batches/{id}/report
       - name: batch-report
         paths:
           - ~/api/v2/payments/batches/[^/]+/report$
@@ -149,7 +119,6 @@ services:
         preserve_host: false
         regex_priority: 100
 
-      # GET /api/v2/payments/receipts/{id}
       - name: payment-receipts
         paths:
           - ~/api/v2/payments/receipts/[^/]+$
@@ -160,7 +129,6 @@ services:
         preserve_host: false
         regex_priority: 100
 
-      # GET /api/v2/payments/receipts/{id}/pdf
       - name: payment-receipts-pdf
         paths:
           - ~/api/v2/payments/receipts/[^/]+/pdf$
@@ -171,7 +139,6 @@ services:
         preserve_host: false
         regex_priority: 101
 
-  # ── account-core-service ──────────────────────────────────────────────────
   - name: account-core-service
     url: http://account-core-service:8081
     connect_timeout: 5000

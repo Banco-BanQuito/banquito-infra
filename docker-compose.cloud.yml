@@ -1,6 +1,0 @@
-# docker-compose.cloud.yml
-# Este archivo ya no es necesario como override — toda la configuración
-# de cloud (Cloud SQL, MongoDB Atlas) vive en docker-compose.yml vía .env
-#
-# Se mantiene como referencia pero puede omitirse:
-#   docker compose up -d          ← suficiente con el base + .env

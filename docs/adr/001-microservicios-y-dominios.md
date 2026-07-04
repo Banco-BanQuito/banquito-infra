@@ -18,7 +18,7 @@ Se divide el sistema en **9 microservicios** agrupados en dos dominios (Bounded 
 - `file-reception-service`: recepción y validación estructural de archivos.
 - `routing-service`: enrutamiento dinámico On-Us/Off-Us.
 - `tariff-service`: cálculo de comisiones.
-- `clearinghouse-adapter`: simulación de la Cámara de Compensación / Banco Central.
+- `clearinghouse-service`: simulación de la Cámara de Compensación / Banco Central.
 - `report-service`: comprobantes y reportes de novedades.
 - `notification-service`: envío de notificaciones a beneficiarios.
 
@@ -27,7 +27,7 @@ Cada microservicio tiene **su propia base de datos** (Database per Service) y ex
 ## Por qué esta cantidad y no más/menos
 - Se separó por **responsabilidad transaccional distinta**: el Core necesita consistencia fuerte e inmediata (afecta dinero real); el Switch necesita alto volumen y tolerancia a fallos parciales (un archivo de 100k líneas no debe bloquear el Core).
 - `accounting-service` se separó de `account-core-service` porque el documento de requisitos exige que sean **contextos delimitados independientes** con bases de datos propias, y porque la contabilidad de partida doble tiene reglas de negocio (Plan de Cuentas, cuadre) que no dependen de cómo se calculan los saldos del cliente.
-- `tariff-service`, `notification-service` y `clearinghouse-adapter` se separaron del `routing-service` porque cada uno tiene un ciclo de cambio distinto (la lógica de comisión cambia con frecuencia comercial; la integración con el Banco Central cambia por regulación).
+- `tariff-service`, `notification-service` y `clearinghouse-service` se separaron del `routing-service` porque cada uno tiene un ciclo de cambio distinto (la lógica de comisión cambia con frecuencia comercial; la integración con el Banco Central cambia por regulación).
 
 ## Consecuencias
 - (+) Cada equipo/feature puede desplegar su servicio sin afectar a los demás.

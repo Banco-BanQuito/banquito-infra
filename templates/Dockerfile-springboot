@@ -1,45 +1,20 @@
-# ══════════════════════════════════════════════════════════════════════════════
-# Plantilla Dockerfile — Microservicio Spring Boot (Java 21)
-#
-# USO:
-#   1. Copia este archivo a la raíz de tu repo como "Dockerfile"
-#   2. Cambia el valor de EXPOSE al puerto de tu servicio
-#   3. El resto no necesitas tocarlo
-#
-# Puertos por servicio:
-#   account-core-service   8081
-#   accounting-service     8082
-#   party-service          8083
-#   file-reception-service 8084
-#   routing-service        8085
-#   tariff-service         8086
-#   clearinghouse-adapter  8087
-#   report-service         8088
-#   notification-service   8089
-# ══════════════════════════════════════════════════════════════════════════════
 
-# ── Etapa 1: Compilación ──────────────────────────────────────────────────────
 FROM maven:3.9-eclipse-temurin-21-alpine AS builder
 
 WORKDIR /app
 
-# Copia solo el pom.xml primero para cachear dependencias
 COPY pom.xml .
 RUN mvn dependency:go-offline -q
 
-# Copia el código fuente y compila
 COPY src ./src
 RUN mvn package -DskipTests -q
 
-# ── Etapa 2: Imagen de ejecución (solo JRE, más liviana) ──────────────────────
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
 
-# ▼▼▼ CAMBIA ESTE PUERTO AL DE TU SERVICIO ▼▼▼
 EXPOSE 8081
-# ▲▲▲ ─────────────────────────────────────── ▲▲▲
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

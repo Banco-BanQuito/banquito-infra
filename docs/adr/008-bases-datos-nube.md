@@ -9,7 +9,7 @@ El enunciado exige que la base de datos de producción esté contratada como ser
 ## Decisión
 - **PostgreSQL** (`account-core-service`, `accounting-service`): **Cloud SQL** (Google Cloud), una sola instancia con dos esquemas separados (`account_core`, `accounting`) para mantener "Database per Service" a nivel lógico sin pagar por dos instancias físicas completas.
 - **MySQL** (`party-service`, `file-reception-service`, `tariff-service`): **Cloud SQL** (Google Cloud), una sola instancia con bases lógicas separadas (`partydb`, `filedb`, `tariffdb`).
-- **MongoDB** (`routing-service`, `clearinghouse-adapter`, `report-service`, parte de `file-reception-service`): **MongoDB Atlas**, con colecciones separadas por servicio dentro de la misma base `banquito`.
+- **MongoDB** (`routing-service`, `clearinghouse-service`, `report-service`, parte de `file-reception-service`): **MongoDB Atlas**, con colecciones separadas por servicio dentro de la misma base `banquito`.
 - **RabbitMQ**: actualmente corre como contenedor Docker en la misma VM de aplicación (limitación conocida, no migrado a un proveedor gestionado como CloudAMQP por decisión de alcance de este parcial).
 
 ## Por qué instancias compartidas con esquemas/bases lógicas separadas, en vez de una instancia física por servicio

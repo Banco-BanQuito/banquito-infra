@@ -29,7 +29,21 @@
   ],
   "queues": [
     {
-      "name": "payment.lines.queue",
+      "name": "payment.lines.onus.queue",
+      "vhost": "banquito",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payment.lines.offus.queue",
+      "vhost": "banquito",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "payment.lines.invalid.queue",
       "vhost": "banquito",
       "durable": true,
       "auto_delete": false,

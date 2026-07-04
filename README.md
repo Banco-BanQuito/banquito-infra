@@ -69,7 +69,7 @@ docker-compose up -d accounting-service
 | `FILE_RECEPTION_IMAGE`    | file-reception-service    | Alan        |
 | `ROUTING_IMAGE`           | routing-service           | Paul        |
 | `TARIFF_IMAGE`            | tariff-service            | Johan       |
-| `CLEARINGHOUSE_IMAGE`     | clearinghouse-adapter     | Johan       |
+| `CLEARINGHOUSE_IMAGE`     | clearinghouse-service     | Johan       |
 | `REPORT_IMAGE`            | report-service            | Anthony     |
 | `NOTIFICATION_IMAGE`      | notification-service      | Anthony     |
 | `TELLER_FRONTEND_IMAGE`   | teller-frontend           | Santiago    |
