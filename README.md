@@ -67,7 +67,6 @@ docker-compose up -d accounting-service
 | `ACCOUNTING_IMAGE`        | accounting-service        | Bryan       |
 | `PARTY_IMAGE`             | party-service             | Santiago    |
 | `FILE_RECEPTION_IMAGE`    | file-reception-service    | Alan        |
-| `ROUTING_IMAGE`           | routing-service           | Paul        |
 | `TARIFF_IMAGE`            | tariff-service            | Johan       |
 | `CLEARINGHOUSE_IMAGE`     | clearinghouse-service     | Johan       |
 | `REPORT_IMAGE`            | report-service            | Anthony     |

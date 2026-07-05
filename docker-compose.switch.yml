@@ -48,50 +48,25 @@ services:
       APP_RABBIT_QUEUE_ONUS: payment.lines.onus.queue
       APP_RABBIT_QUEUE_OFFUS: payment.lines.offus.queue
       APP_RABBIT_QUEUE_INVALID: payment.lines.invalid.queue
+      RABBITMQ_CLEARING_EXCHANGE: clearing.exchange
+      RABBITMQ_CLEARING_ROUTING_KEY: clearing.outbound
       CUT_OFF_TIME: "18:00"
       APP_CUTOFF_HOUR: "23"
       SERVER_PORT: "8084"
       APP_CORE_VALIDATION_ENABLED: "false"
       APP_FORCE_BUSINESS_DAY: "true"
+      CORE_GATEWAY_URL: "http://account-core-service:8081"
+      CORPORATE_ACCOUNT_NUMBER: "0000000000"
+      TARIFF_SERVICE_GRPC_HOST: tariff-service
+      TARIFF_SERVICE_GRPC_PORT: "9091"
+      NOTIFICATION_SERVICE_GRPC_HOST: notification-service
+      NOTIFICATION_SERVICE_GRPC_PORT: "9092"
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "3"
       SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
     ports:
       - "8084:8084"
     networks:
       - switch-net
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-
-  routing-service:
-    image: ${ROUTING_IMAGE:-ghcr.io/banco-banquito/routing-service:latest}
-    container_name: routing-service
-    restart: unless-stopped
-    environment:
-      SPRING_DATA_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      SPRING_MONGODB_URI: "mongodb+srv://${MONGO_ATLAS_URL}/banquito"
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USERNAME: banquito
-      RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
-      SPRING_RABBITMQ_VIRTUAL_HOST: banquito
-      RABBITMQ_ONUS_QUEUE: payment.lines.onus.queue
-      RABBITMQ_OFFUS_QUEUE: payment.lines.offus.queue
-      RABBITMQ_INVALID_QUEUE: payment.lines.invalid.queue
-      RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      ACCOUNT_CORE_GRPC_HOST: kong-core
-      ACCOUNT_CORE_GRPC_PORT: "8000"
-      TARIFF_SERVICE_GRPC_HOST: tariff-service
-      TARIFF_SERVICE_GRPC_PORT: "9091"
-      NOTIFICATION_SERVICE_GRPC_HOST: notification-service
-      NOTIFICATION_SERVICE_GRPC_PORT: "9092"
-      CORE_GATEWAY_URL: "http://account-core-service:8081"
-      SERVER_PORT: "8085"
-    ports:
-      - "8085:8085"
-    networks:
-      - switch-net
-      - core-net
     depends_on:
       rabbitmq:
         condition: service_healthy

@@ -9,8 +9,8 @@ El Switch de Pagos Masivos debe procesar archivos de miles de líneas sin bloque
 ## Decisión
 - Se usa **RabbitMQ** como único broker.
 - Cada flujo asíncrono tiene un **Exchange `direct`** dedicado con su **Routing Key**, en lugar de publicar directo al exchange default:
-  - `payment.exchange` (routing key `payment.lines`) → `payment.lines.queue`: `file-reception-service` publica cada línea de un lote; `routing-service` consume con `concurrency 5-20`.
-  - `clearing.exchange` (routing key `clearing.outbound`) → `clearing.outbound.queue`: `routing-service` y `account-core-service` publican transacciones Off-Us; `clearinghouse-service` consume.
+  - `payment.exchange` (Direct, routing key según clasificación: `onus`/`offus`/`invalid`) → colas `payment.lines.onus.queue`/`payment.lines.offus.queue`/`payment.lines.invalid.queue`: `file-reception-service` publica cada línea ya clasificada y las consume ella misma con `concurrency 5-20` (ver ADR-011). El Exchange, no un microservicio de ruteo, decide a qué cola llega cada línea.
+  - `clearing.exchange` (routing key `clearing.outbound`) → `clearing.outbound.queue`: `file-reception-service` y `account-core-service` publican transacciones Off-Us; `clearinghouse-service` consume.
 - El acuse de recibo es **automático** (modo `AUTO` de Spring AMQP): el contenedor confirma el mensaje tras procesarlo sin excepción, y lo reencola si falla.
 
 ## Por qué Exchange + Routing Key y no solo nombre de cola

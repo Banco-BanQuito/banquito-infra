@@ -9,9 +9,8 @@ El proyecto exige comunicación binaria (gRPC) obligatoria para llamadas inter-m
 ## Decisión
 - **Dentro del mismo dominio**: toda comunicación síncrona es **gRPC en modo UNARY**.
   - Core: `account-core-service` ↔ `accounting-service`, `account-core-service` ↔ `party-service`.
-  - Switch: `routing-service` ↔ `tariff-service`, `routing-service` ↔ `notification-service`, `file-reception-service` ↔ `routing-service`.
+  - Switch: `file-reception-service` ↔ `tariff-service`, `file-reception-service` ↔ `notification-service` (ver ADR-011: el despacho de pagos, antes en `routing-service`, ahora vive en `file-reception-service`).
 - **Al cruzar de un dominio a otro**: se usa **REST/HTTP**, tratando al otro dominio como si fuera un consumidor externo.
-  - `routing-service` (Switch) → `account-core-service` (Core): REST.
   - `file-reception-service` (Switch) → `account-core-service` (Core): REST.
   - `clearinghouse-service` (Switch) → `accounting-service` (Core): REST.
 
