@@ -100,7 +100,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: "${RABBITMQ_PASS}"
       SPRING_RABBITMQ_VIRTUAL_HOST: banquito
       RABBITMQ_CLEARING_QUEUE: clearing.outbound.queue
-      ACCOUNTING_SERVICE_URL: http://accounting-service:8082/api/v2/accounting/entries
+      CORE_GATEWAY_URL: http://account-core-service:8081
       SERVER_PORT: "8087"
       COMPENSATION_OUTPUT_DIR: /app/spi-output
       CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3002,http://localhost:3003,http://localhost:3004,http://localhost:3005,http://${VM_PUBLIC_IP}:3001,http://${VM_PUBLIC_IP}:3002,http://${VM_PUBLIC_IP}:3003,http://${VM_PUBLIC_IP}:3004,http://${VM_PUBLIC_IP}:3005"
