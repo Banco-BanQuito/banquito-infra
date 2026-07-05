@@ -14,13 +14,11 @@ SELECT setval('switch_service_type_id_seq', 3);
 -- Johan: GET /api/v2/tariff/calculate?successful_tx=N
 -- Busca el rango donde min_successful_tx <= N <= max_successful_tx
 INSERT INTO payment_tariff (id, min_successful_tx, max_successful_tx, unit_fee, status, valid_from) VALUES
-(1,    1,    10,  1.00, 'ACTIVO', '2026-01-01'),
-(2,   11,    50,  0.90, 'ACTIVO', '2026-01-01'),
-(3,   51,   100,  0.80, 'ACTIVO', '2026-01-01'),
-(4,  101,   500,  0.70, 'ACTIVO', '2026-01-01'),
-(5,  501,  1000,  0.60, 'ACTIVO', '2026-01-01'),
-(6, 1001, 99999,  0.50, 'ACTIVO', '2026-01-01');
-SELECT setval('payment_tariff_id_seq', 6);
+(1,    1,   100,  0.35, 'ACTIVO', '2026-01-01'),
+(2,  101,   500,  0.70, 'ACTIVO', '2026-01-01'),
+(3,  501,  1000,  0.60, 'ACTIVO', '2026-01-01'),
+(4, 1001, 99999,  0.50, 'ACTIVO', '2026-01-01');
+SELECT setval('payment_tariff_id_seq', 4);
 
 -- ── Empresas habilitadas (los 500 corporativos de partydb, IDs 9001-9500) ──
 INSERT INTO switch_customer_service (customer_id, service_type_id, default_main_account, status, max_annual_per_payment)
