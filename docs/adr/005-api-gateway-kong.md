@@ -9,7 +9,7 @@ El enunciado exige una solución propia de API Management (no la de un proveedor
 ## Decisión
 Se usan **dos instancias de Kong** en modo declarativo (`KONG_DATABASE: off`), una por dominio:
 - **Kong Core** (puerto 8000): enruta a `account-core-service`, `accounting-service`, `party-service`, `auth-service`.
-- **Kong Switch** (puerto 8010): enruta a `file-reception-service`, `routing-service`, `report-service`, `account-core-service`, `auth-service`.
+- **Kong Switch** (puerto 8010): enruta a `file-reception-service`, `report-service`, `account-core-service`, `auth-service`.
 
 Cada Kong tiene plugins de `cors` y `rate-limiting` configurados, y un consumidor JWT para las rutas que requieren autenticación (diferido al 3er parcial según el enunciado de esta fase).
 
