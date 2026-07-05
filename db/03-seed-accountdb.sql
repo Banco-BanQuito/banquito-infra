@@ -21,8 +21,10 @@ INSERT INTO transaction_subtype (id, code, name) VALUES
 (5,  'PAG_NOM_C', 'Pago Nómina Crédito On-Us'),
 (6,  'DEB_EMP',   'Débito Corporativo Nómina'),
 (7,  'COM_SWT',   'Comisión Switch Pagos Masivos'),
-(8,  'CLR_OFUS',  'Liquidación Off-Us Banco Central');
-SELECT setval('transaction_subtype_id_seq', 8);
+(8,  'CLR_OFUS',  'Liquidación Off-Us Banco Central'),
+(9,  'DEV_EMP',   'Devolución Corporativa Nómina'),
+(10, 'TRF_EXT_S', 'Transferencia Externa Salida');
+SELECT setval('transaction_subtype_id_seq', 10);
 
 -- ── Cuentas institucionales del banco ────────────────────────────────────
 INSERT INTO institutional_account (id, account_number, name, accounting_balance) VALUES
