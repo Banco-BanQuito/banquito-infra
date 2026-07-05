@@ -145,3 +145,19 @@ services:
           - OPTIONS
         strip_path: false
         preserve_host: false
+
+  - name: clearinghouse-service
+    url: http://clearinghouse-service:8087
+    connect_timeout: 10000
+    write_timeout: 60000
+    read_timeout: 60000
+    routes:
+      - name: clearinghouse-files
+        paths:
+          - /api/v2/clearing
+        methods:
+          - GET
+          - POST
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
