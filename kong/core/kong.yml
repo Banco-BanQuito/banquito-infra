@@ -113,19 +113,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  - name: account-core-grpc
-    protocol: grpc
-    host: account-core-service
-    port: 9091
-    connect_timeout: 10000
-    write_timeout: 60000
-    read_timeout: 60000
-    routes:
-      - name: grpc-account-core
-        protocols: [grpc]
-        paths:
-          - /com.banquito.core.account.AccountCoreService
-
   - name: party-service
     url: http://party-service:8083
     connect_timeout: 10000
