@@ -24,6 +24,7 @@ volumes:
   rabbitmq-data:
   loki-data:
   grafana-data:
+  konga-data:
 
 services:
 
@@ -139,3 +140,20 @@ services:
     command: --interval 60 --cleanup
     networks:
       - core-net
+
+
+  konga:
+    image: pantsel/konga:latest
+    container_name: konga
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_ADAPTER: sqlite3
+      DB_DATABASE: /app/kongadata/konga.db
+    volumes:
+      - konga-data:/app/kongadata
+    ports:
+      - "1337:1337"
+    networks:
+      - core-net
+      - switch-net
