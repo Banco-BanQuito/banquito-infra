@@ -50,8 +50,8 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 12
+      start_period: 90s
 
   notification-service:
     image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
