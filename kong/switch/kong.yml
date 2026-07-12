@@ -1,14 +1,6 @@
 _format_version: "3.0"
 _transform: true
 
-
-consumers:
-  - username: banquito-app
-    jwt_secrets:
-      - key: ${JWT_ISS}
-        secret: ${JWT_SECRET}
-        algorithm: HS256
-
 plugins:
 
   - name: rate-limiting
@@ -43,21 +35,6 @@ plugins:
       max_age: 3600
 
 services:
-
-  - name: auth-service
-    url: http://auth-service:8090
-    connect_timeout: 5000
-    write_timeout: 10000
-    read_timeout: 10000
-    routes:
-      - name: auth-login-switch
-        paths:
-          - /api/v2/auth/login
-        methods:
-          - POST
-          - OPTIONS
-        strip_path: false
-        preserve_host: false
 
   - name: file-reception-service
     url: http://file-reception-service:8084

@@ -71,23 +71,6 @@ services:
       - core-net
 
 
-
-  auth-service:
-    image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
-    container_name: auth-service
-    restart: unless-stopped
-    environment:
-      JWT_SECRET: "${JWT_SECRET}"
-      JWT_ISS: "${JWT_ISS}"
-      ACCOUNT_CORE_URL: http://account-core-service:8081
-      PARTY_SERVICE_URL: http://party-service:8083
-    ports:
-      - "8090:8090"
-    networks:
-      - core-net
-      - switch-net
-
-
   operador-frontend:
     image: ${OPERADOR_FRONTEND_IMAGE:-ghcr.io/banco-banquito/operador-frontend:latest}
     container_name: operador-frontend
