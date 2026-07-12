@@ -99,11 +99,6 @@ services:
     build:
       context: ../banquito-report-service
 
-  auth-service:
-    image: banquito/auth-service:local
-    build:
-      context: ./auth
-
   teller-frontend:
     image: banquito/teller-frontend:local
     build:

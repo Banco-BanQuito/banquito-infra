@@ -1,14 +1,6 @@
 _format_version: "3.0"
 _transform: true
 
-
-consumers:
-  - username: banquito-app
-    jwt_secrets:
-      - key: ${JWT_ISS}
-        secret: ${JWT_SECRET}
-        algorithm: HS256
-
 plugins:
 
   - name: rate-limiting
