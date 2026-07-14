@@ -147,6 +147,15 @@ services:
         strip_path: false
         preserve_host: false
 
+      - name: customers-write
+        paths:
+          - /api/v2/customers
+        methods:
+          - POST
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+
       - name: branches-read
         paths:
           - /api/v2/branches
