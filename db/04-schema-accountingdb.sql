@@ -20,15 +20,17 @@ CREATE INDEX idx_aa_parent ON accounting_account(parent_account_code);
 
 -- Cabecera del asiento contable
 CREATE TABLE journal_entry (
-    id          BIGSERIAL    PRIMARY KEY,
-    entry_uuid  VARCHAR(36)  NOT NULL UNIQUE,    -- UUID de la transacción que lo originó
-    description VARCHAR(255) NOT NULL,
-    entry_date  TIMESTAMP    NOT NULL DEFAULT NOW(),
-    status      VARCHAR(15)  NOT NULL DEFAULT 'REGISTRADO' CHECK (status IN ('REGISTRADO','ANULADO'))
+    id                   BIGSERIAL    PRIMARY KEY,
+    entry_uuid           VARCHAR(36)  NOT NULL UNIQUE,    -- UUID de la transacción que lo originó
+    description          VARCHAR(255) NOT NULL,
+    entry_date           TIMESTAMP    NOT NULL DEFAULT NOW(),
+    status               VARCHAR(15)  NOT NULL DEFAULT 'REGISTRADO' CHECK (status IN ('REGISTRADO','ANULADO')),
+    reversal_of_entry_id BIGINT       REFERENCES journal_entry(id)  -- si este asiento es el reverso de otro
 );
 
 CREATE INDEX idx_je_uuid ON journal_entry(entry_uuid);
 CREATE INDEX idx_je_date ON journal_entry(entry_date);
+CREATE INDEX idx_je_reversal ON journal_entry(reversal_of_entry_id);
 
 -- Líneas del asiento (las "patas") — suma(DEBITOS) debe = suma(CREDITOS)
 CREATE TABLE journal_entry_line (
