@@ -1,92 +1,71 @@
-name: Deploy to VM
+name: Deploy to GKE
 
 on:
   push:
     branches: [main]
+    paths:
+      - "k8s/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
+  GKE_LOCATION: ${{ secrets.GKE_LOCATION }}
+  ARTIFACT_REGION: ${{ secrets.ARTIFACT_REGION }}
+  ARTIFACT_REPOSITORY: ${{ secrets.ARTIFACT_REPOSITORY }}
 
 jobs:
   deploy:
+    name: Apply Kubernetes manifests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          envs: CLOUD_SQL_HOST,CLOUD_DB_USER,CLOUD_DB_PASS,CLOUD_MYSQL_HOST,CLOUD_MYSQL_USER,CLOUD_MYSQL_PASS,MONGO_ATLAS_URL,RABBITMQ_PASS,JWT_SECRET,JWT_ISS,SMTP_USER,SMTP_HOST,SMTP_PORT,SMTP_PASS,VM_PUBLIC_IP,DOCKER_CONFIG_PATH,GRAFANA_ADMIN_USER,GRAFANA_ADMIN_PASSWORD
-          script: |
-            set -e
-            cd ~/banquito/banquito-infra
-            git pull
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-            # Regenerar .env solo si los secrets están configurados en GitHub
-            if [ -n "${JWT_SECRET}" ] && [ -n "${CLOUD_DB_PASS}" ]; then
-              # tr -d '\r\n' elimina saltos de línea que GitHub Actions puede inyectar en los secrets
-              printf 'CLOUD_SQL_HOST=%s\n'    "$(printf '%s' "${CLOUD_SQL_HOST}"    | tr -d '\r\n')"  >  .env
-              printf 'CLOUD_DB_USER=%s\n'     "$(printf '%s' "${CLOUD_DB_USER}"     | tr -d '\r\n')"  >> .env
-              printf 'CLOUD_DB_PASS=%s\n'     "$(printf '%s' "${CLOUD_DB_PASS}"     | tr -d '\r\n')"  >> .env
-              printf 'CLOUD_MYSQL_HOST=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_HOST}"  | tr -d '\r\n')"  >> .env
-              printf 'CLOUD_MYSQL_USER=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_USER}"  | tr -d '\r\n')"  >> .env
-              printf 'CLOUD_MYSQL_PASS=%s\n'  "$(printf '%s' "${CLOUD_MYSQL_PASS}"  | tr -d '\r\n')"  >> .env
-              printf 'MONGO_ATLAS_URL=%s\n'   "$(printf '%s' "${MONGO_ATLAS_URL}"   | tr -d '\r\n')"  >> .env
-              printf 'RABBITMQ_PASS=%s\n'     "$(printf '%s' "${RABBITMQ_PASS}"     | tr -d '\r\n')"  >> .env
-              printf 'JWT_SECRET=%s\n'        "$(printf '%s' "${JWT_SECRET}"        | tr -d '\r\n')"  >> .env
-              printf 'JWT_ISS=%s\n'           "$(printf '%s' "${JWT_ISS}"           | tr -d '\r\n')"  >> .env
-              printf 'SMTP_USER=%s\n'         "$(printf '%s' "${SMTP_USER}"         | tr -d '\r\n')"  >> .env
-              printf 'SMTP_HOST=%s\n'         "$(printf '%s' "${SMTP_HOST}"         | tr -d '\r\n')"  >> .env
-              printf 'SMTP_PORT=%s\n'         "$(printf '%s' "${SMTP_PORT}"         | tr -d '\r\n')"  >> .env
-              printf 'SMTP_PASS=%s\n'         "$(printf '%s' "${SMTP_PASS}"         | tr -d '\r\n')"  >> .env
-              printf 'VM_PUBLIC_IP=%s\n'      "$(printf '%s' "${VM_PUBLIC_IP}"      | tr -d '\r\n')"  >> .env
-              printf 'DOCKER_CONFIG_PATH=%s\n' "$(printf '%s' "${DOCKER_CONFIG_PATH}" | tr -d '\r\n')"  >> .env
-              printf 'GRAFANA_ADMIN_USER=%s\n' "$(printf '%s' "${GRAFANA_ADMIN_USER}" | tr -d '\r\n')"  >> .env
-              printf 'GRAFANA_ADMIN_PASSWORD=%s\n' "$(printf '%s' "${GRAFANA_ADMIN_PASSWORD}" | tr -d '\r\n')"  >> .env
-              echo "[deploy] .env regenerado desde GitHub Secrets"
-            else
-              echo "[deploy] AVISO: secrets no configurados, se mantiene .env existente"
-            fi
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-            # Instalar clientes de BD si no están disponibles
-            command -v mysql > /dev/null 2>&1 || sudo apt-get install -y -q default-mysql-client
-            command -v psql  > /dev/null 2>&1 || sudo apt-get install -y -q postgresql-client
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_LOCATION }}
+          project_id: ${{ env.GCP_PROJECT_ID }}
 
-            # Crear BD banquito en PostgreSQL y sus schemas (idempotente)
-            PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" -tc \
-              "SELECT 1 FROM pg_database WHERE datname='banquito'" | grep -q 1 || \
-              PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" \
-              -c "CREATE DATABASE banquito;" && echo "[deploy] BD banquito creada"
-            PGPASSWORD="${CLOUD_DB_PASS}" psql -h "${CLOUD_SQL_HOST}" -U "${CLOUD_DB_USER}" \
-              -d banquito < db/postgres-schema.sql && \
-              echo "[deploy] schemas PostgreSQL aplicados" || echo "[deploy] AVISO: fallo schemas PostgreSQL"
+      - name: Prepare manifests
+        run: |
+          set -euo pipefail
+          cp -R k8s rendered-k8s
 
-            # Crear/actualizar schemas MySQL (idempotente — usa IF NOT EXISTS)
-            LIBMYSQL_ENABLE_CLEARTEXT_PLUGIN=1 mysql -h "${CLOUD_MYSQL_HOST}" -u "${CLOUD_MYSQL_USER}" -p"${CLOUD_MYSQL_PASS}" < db/mysql-schema.sql && \
-              echo "[deploy] schemas MySQL aplicados" || echo "[deploy] AVISO: fallo al aplicar schemas MySQL"
+      - name: Validate manifests
+        run: |
+          kubectl create --dry-run=client --validate=false --recursive -f rendered-k8s
 
-            # Resolver variables JWT en Kong config (sed sustituye ${JWT_SECRET} y ${JWT_ISS})
-            sed -i "s|\${JWT_SECRET}|${JWT_SECRET}|g; s|\${JWT_ISS}|${JWT_ISS}|g" kong/core/kong.yml kong/switch/kong.yml
-            echo "[deploy] Kong JWT config resuelto"
+      - name: Apply manifests
+        run: |
+          kubectl apply --recursive -f rendered-k8s
 
-            docker compose -f docker-compose.yml down
-            docker compose -f docker-compose.yml up -d
-            docker image prune -f
-        env:
-          CLOUD_SQL_HOST: ${{ secrets.CLOUD_SQL_HOST }}
-          CLOUD_DB_USER: ${{ secrets.CLOUD_DB_USER }}
-          CLOUD_DB_PASS: ${{ secrets.CLOUD_DB_PASS }}
-          CLOUD_MYSQL_HOST: ${{ secrets.CLOUD_MYSQL_HOST }}
-          CLOUD_MYSQL_USER: ${{ secrets.CLOUD_MYSQL_USER }}
-          CLOUD_MYSQL_PASS: ${{ secrets.CLOUD_MYSQL_PASS }}
-          MONGO_ATLAS_URL: ${{ secrets.MONGO_ATLAS_URL }}
-          RABBITMQ_PASS: ${{ secrets.RABBITMQ_PASS }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_ISS: ${{ secrets.JWT_ISS }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          VM_PUBLIC_IP: ${{ secrets.VM_PUBLIC_IP }}
-          DOCKER_CONFIG_PATH: ${{ secrets.DOCKER_CONFIG_PATH }}
-          GRAFANA_ADMIN_USER: ${{ secrets.GRAFANA_ADMIN_USER }}
-          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
+      - name: Show services
+        run: |
+          kubectl get svc -A
+
+      - name: Show pods
+        run: |
+          kubectl get pods -n banquito-core -o wide
+          kubectl get pods -n banquito-switch -o wide
+          kubectl get pods -n banquito-frontend -o wide
+
+      - name: Show external access
+        run: |
+          kubectl get gateway -A
+          kubectl get httproute -A
