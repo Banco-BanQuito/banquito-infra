@@ -1,14 +1,6 @@
 _format_version: "3.0"
 _transform: true
 
-
-consumers:
-  - username: banquito-app
-    jwt_secrets:
-      - key: ${JWT_ISS}
-        secret: ${JWT_SECRET}
-        algorithm: HS256
-
 plugins:
 
   - name: rate-limiting
@@ -121,19 +113,6 @@ services:
         strip_path: false
         preserve_host: false
 
-  - name: account-core-grpc
-    protocol: grpc
-    host: account-core-service
-    port: 9091
-    connect_timeout: 10000
-    write_timeout: 60000
-    read_timeout: 60000
-    routes:
-      - name: grpc-account-core
-        protocols: [grpc]
-        paths:
-          - /com.banquito.core.account.AccountCoreService
-
   - name: party-service
     url: http://party-service:8083
     connect_timeout: 10000
@@ -164,6 +143,15 @@ services:
           - /api/v2/customers
         methods:
           - GET
+          - OPTIONS
+        strip_path: false
+        preserve_host: false
+
+      - name: customers-write
+        paths:
+          - /api/v2/customers
+        methods:
+          - POST
           - OPTIONS
         strip_path: false
         preserve_host: false

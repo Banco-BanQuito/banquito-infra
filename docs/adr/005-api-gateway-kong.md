@@ -8,10 +8,10 @@ El enunciado exige una solución propia de API Management (no la de un proveedor
 
 ## Decisión
 Se usan **dos instancias de Kong** en modo declarativo (`KONG_DATABASE: off`), una por dominio:
-- **Kong Core** (puerto 8000): enruta a `account-core-service`, `accounting-service`, `party-service`, `auth-service`.
-- **Kong Switch** (puerto 8010): enruta a `file-reception-service`, `report-service`, `account-core-service`, `auth-service`.
+- **Kong Core** (puerto 8000): enruta a `account-core-service`, `accounting-service`, `party-service`.
+- **Kong Switch** (puerto 8010): enruta a `file-reception-service`, `report-service`, `account-core-service`, `clearinghouse-service`.
 
-Cada Kong tiene plugins de `cors` y `rate-limiting` configurados, y un consumidor JWT para las rutas que requieren autenticación (diferido al 3er parcial según el enunciado de esta fase).
+Cada Kong tiene plugins de `cors` y `rate-limiting` configurados. La autenticación vía JWT está diferida al 3er parcial según el enunciado de esta fase; por eso no hay un plugin `jwt` activo en ninguna ruta todavía.
 
 ## Por qué Kong y no WSO2
 Kong fue elegido por su modelo de configuración declarativa (un solo YAML versionable en el repositorio, sin necesidad de una base de datos de administración para este alcance), y por tener un ecosistema de plugins maduro para rate limiting y CORS sin desarrollo adicional. WSO2 API Manager es más pesado de operar (requiere su propia base de datos y un Carbon Server) para el alcance de este parcial.

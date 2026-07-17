@@ -24,6 +24,7 @@ volumes:
   rabbitmq-data:
   loki-data:
   grafana-data:
+  konga-data:
 
 services:
 
@@ -49,8 +50,8 @@ services:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 15s
       timeout: 10s
-      retries: 5
-      start_period: 30s
+      retries: 12
+      start_period: 90s
 
   notification-service:
     image: ${NOTIFICATION_IMAGE:-ghcr.io/banco-banquito/notification-service:latest}
@@ -69,23 +70,6 @@ services:
     networks:
       - switch-net
       - core-net
-
-
-
-  auth-service:
-    image: ${AUTH_IMAGE:-ghcr.io/banco-banquito/auth-service:latest}
-    container_name: auth-service
-    restart: unless-stopped
-    environment:
-      JWT_SECRET: "${JWT_SECRET}"
-      JWT_ISS: "${JWT_ISS}"
-      ACCOUNT_CORE_URL: http://account-core-service:8081
-      PARTY_SERVICE_URL: http://party-service:8083
-    ports:
-      - "8090:8090"
-    networks:
-      - core-net
-      - switch-net
 
 
   operador-frontend:
@@ -156,3 +140,18 @@ services:
     command: --interval 60 --cleanup
     networks:
       - core-net
+
+
+  konga:
+    image: pantsel/konga:latest
+    container_name: konga
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    volumes:
+      - konga-data:/app/kongadata
+    ports:
+      - "1337:1337"
+    networks:
+      - core-net
+      - switch-net
