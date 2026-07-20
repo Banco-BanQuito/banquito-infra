@@ -386,19 +386,95 @@ banquito-core: No resources found
 banquito-switch: No resources found
 ```
 
-## Pendiente de codigo
+## Migracion de codigo ejecutada
 
-La infraestructura ya queda preparada para Pub/Sub, pero los microservicios todavia deben cambiar codigo:
+Se migro el codigo Java de los servicios que dependian de RabbitMQ para el flujo asincrono principal:
+
+| Microservicio | Cambio aplicado | Resultado |
+| --- | --- | --- |
+| `banquito-file-reception-service` | Se reemplazo publicacion/consumo RabbitMQ por publishers/subscribers de Google Pub/Sub. | Pod `1/1 Running` |
+| `banquito-clearinghouse-service` | Se reemplazo el listener RabbitMQ por subscriber de Google Pub/Sub sobre `clearing-outbound-sub`. | Pod `1/1 Running` |
+
+Tambien se agrego configuracion explicita de Jackson (`ObjectMapper`) porque Spring Boot 4 no estaba registrando automaticamente el bean requerido por los componentes Pub/Sub.
+
+## Ajuste de runtime Docker
+
+Durante la validacion en GKE, `clearinghouse-service` inicio Pub/Sub pero el runtime Java tuvo un fallo nativo con Netty/OpenSSL:
 
 ```text
-1. Remover spring-boot-starter-amqp donde ya no aplique.
-2. Agregar google-cloud-pubsub.
-3. Reemplazar RabbitTemplate por Publisher de Pub/Sub.
-4. Reemplazar @RabbitListener por Subscriber de Pub/Sub.
-5. Leer topics/subscriptions desde variables de entorno.
-6. Reconstruir imagenes Docker.
-7. Ejecutar CI/CD.
-8. Desplegar en GKE.
+Problematic frame:
+libio_grpc_netty_shaded_netty_tcnative_linux_x86_64...
 ```
 
-Mientras ese cambio no se haga, `file-reception-service` y `clearinghouse-service` pueden seguir intentando conectarse a RabbitMQ porque el codigo actual aun contiene listeners Rabbit.
+Correccion aplicada en los Dockerfiles de `file-reception-service` y `clearinghouse-service`:
+
+```dockerfile
+FROM eclipse-temurin:21-jre
+ENV JAVA_TOOL_OPTIONS="-Dio.netty.handler.ssl.noOpenSsl=true"
+```
+
+Con esto se evita depender de OpenSSL nativo dentro del contenedor y Pub/Sub usa SSL de Java.
+
+## Commits desplegados por CI/CD
+
+Los cambios fueron subidos a GitHub y desplegados por GitHub Actions hacia GKE:
+
+| Repositorio | Commit | Imagen desplegada |
+| --- | --- | --- |
+| `banquito-file-reception-service` | `e4aaf39` | `us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/file-reception-service:e4aaf39673bc97b9930fd4bcc40d3726311d4a62` |
+| `banquito-clearinghouse-service` | `ce72988` | `us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/clearinghouse-service:ce72988b8a4f1ea1a59d8cba59740fc9b68cfaf5` |
+
+## Validacion en GKE
+
+Comandos ejecutados desde Windows 11:
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get deployment file-reception-service clearinghouse-service -n banquito-switch -o wide
+kubectl --insecure-skip-tls-verify=true get pods -n banquito-switch -o wide
+kubectl --insecure-skip-tls-verify=true logs -n banquito-switch deployment/file-reception-service --tail=120
+kubectl --insecure-skip-tls-verify=true logs -n banquito-switch deployment/clearinghouse-service --tail=100
+```
+
+Resultado de deployments:
+
+```text
+file-reception-service   1/1   AVAILABLE   image: .../file-reception-service:e4aaf39673bc97b9930fd4bcc40d3726311d4a62
+clearinghouse-service    1/1   AVAILABLE   image: .../clearinghouse-service:ce72988b8a4f1ea1a59d8cba59740fc9b68cfaf5
+```
+
+Resultado de Pods:
+
+```text
+clearinghouse-service-867d45b89-8xzf8     1/1   Running   0
+file-reception-service-56dd77b65b-q8pgw   1/1   Running   0
+```
+
+Evidencia en logs de `file-reception-service`:
+
+```text
+Pub/Sub subscriber iniciado para payment-lines-onus-sub
+Pub/Sub subscriber iniciado para payment-lines-offus-sub
+Pub/Sub subscriber iniciado para payment-lines-invalid-sub
+Started BatchApplication
+CI/CD backend validation: file-reception-service started
+```
+
+Evidencia en logs de `clearinghouse-service`:
+
+```text
+Picked up JAVA_TOOL_OPTIONS: -Dio.netty.handler.ssl.noOpenSsl=true
+Pub/Sub subscriber iniciado para clearing-outbound-sub
+Started BanquitoClearinghouseServiceApplication
+CI/CD backend validation: clearinghouse-service started
+```
+
+## Estado final
+
+El reemplazo operativo de RabbitMQ por Google Pub/Sub queda validado en GKE para:
+
+```text
+file-reception-service
+clearinghouse-service
+```
+
+La infraestructura Pub/Sub, Workload Identity, CI/CD, Artifact Registry y runtime Kubernetes estan funcionando para estos servicios.
