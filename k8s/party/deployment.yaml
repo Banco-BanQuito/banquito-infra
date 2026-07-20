@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: party-service
+  namespace: banquito-core
+  labels:
+    app: party
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: party
+  template:
+    metadata:
+      labels:
+        app: party
+    spec:
+      containers:
+        - name: party-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/party-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8083
+            - name: grpc
+              containerPort: 9093
+          env:
+            - name: SERVER_PORT
+              value: "8083"
+            - name: DB_URL
+              value: "jdbc:mysql://136.111.132.119:3306/partydb"
+            - name: DB_USER
+              value: root
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: party-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+

@@ -1,15 +1,27 @@
-name: Validate Compose
+name: Validate Kubernetes Manifests
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "k8s/**"
+      - ".github/workflows/**"
   push:
     branches: [main]
+    paths:
+      - "k8s/**"
+      - ".github/workflows/ci-template.yml"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate docker-compose files
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Validate Kubernetes manifests
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.cloud.yml config --quiet
-          echo "Compose files are valid"
+          kubectl create --dry-run=client --validate=false --recursive -f k8s

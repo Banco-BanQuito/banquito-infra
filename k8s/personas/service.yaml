@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-personas-frontend
+  namespace: banquito-frontend
+  labels:
+    app: personas
+spec:
+  type: ClusterIP
+  selector:
+    app: personas
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+

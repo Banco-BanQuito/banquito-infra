@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tariff-service
+  namespace: banquito-switch
+  labels:
+    app: tariff
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tariff
+  template:
+    metadata:
+      labels:
+        app: tariff
+    spec:
+      containers:
+        - name: tariff-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/tariff-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8086
+            - name: grpc
+              containerPort: 9090
+          env:
+            - name: SERVER_PORT
+              value: "8086"
+            - name: POSTGRES_URL
+              value: "jdbc:mysql://136.111.132.119:3306/tariffdb"
+            - name: POSTGRES_USER
+              value: root
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: tariff-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+

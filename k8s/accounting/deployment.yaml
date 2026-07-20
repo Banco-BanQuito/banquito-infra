@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting-service
+  namespace: banquito-core
+  labels:
+    app: accounting
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: accounting
+  template:
+    metadata:
+      labels:
+        app: accounting
+    spec:
+      containers:
+        - name: accounting-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/accounting-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8082
+            - name: grpc
+              containerPort: 9092
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+            - name: DB_URL
+              value: "jdbc:postgresql://136.112.87.173:5432/banquito"
+            - name: DB_USER
+              value: postgres
+            - name: DB_SCHEMA
+              value: accounting
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: accounting-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+

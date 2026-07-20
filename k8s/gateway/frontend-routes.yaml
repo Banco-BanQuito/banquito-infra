@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: frontend-routes
+  name: personas-frontend-route
   namespace: banquito-frontend
 spec:
   parentRefs:
@@ -16,4 +16,64 @@ spec:
             value: /
       backendRefs:
         - name: web-personas-frontend
+          port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: empresas-frontend-route
+  namespace: banquito-frontend
+spec:
+  parentRefs:
+    - name: banquito-public-gateway
+      namespace: banquito-gateway
+  hostnames:
+    - empresas.8.233.141.65.nip.io
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: web-empresas-frontend
+          port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: teller-frontend-route
+  namespace: banquito-frontend
+spec:
+  parentRefs:
+    - name: banquito-public-gateway
+      namespace: banquito-gateway
+  hostnames:
+    - teller.8.233.141.65.nip.io
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: teller-frontend
+          port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: operador-frontend-route
+  namespace: banquito-frontend
+spec:
+  parentRefs:
+    - name: banquito-public-gateway
+      namespace: banquito-gateway
+  hostnames:
+    - operador.8.233.141.65.nip.io
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: operador-frontend
           port: 8080

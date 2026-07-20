@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clearinghouse-service
+  namespace: banquito-switch
+  labels:
+    app: clearinghouse
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: clearinghouse
+  template:
+    metadata:
+      labels:
+        app: clearinghouse
+    spec:
+      serviceAccountName: clearinghouse-pubsub-ksa
+      containers:
+        - name: clearinghouse-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/clearinghouse-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8087
+          env:
+            - name: SERVER_PORT
+              value: "8087"
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: mongo-services-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 300
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 300m
+              memory: 768Mi
+            limits:
+              cpu: 750m
+              memory: 1Gi
+

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: file-reception-service
+  namespace: banquito-switch
+  labels:
+    app: file-reception
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: file-reception
+  template:
+    metadata:
+      labels:
+        app: file-reception
+    spec:
+      serviceAccountName: file-reception-pubsub-ksa
+      containers:
+        - name: file-reception-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/file-reception-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8084
+          env:
+            - name: SERVER_PORT
+              value: "8084"
+            - name: DB_URL
+              value: "jdbc:mysql://136.111.132.119:3306/filedb"
+            - name: DB_USER
+              value: root
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: file-reception-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 360
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 300m
+              memory: 768Mi
+            limits:
+              cpu: 750m
+              memory: 1Gi
+

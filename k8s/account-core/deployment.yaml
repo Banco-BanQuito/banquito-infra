@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-core-service
+  namespace: banquito-core
+  labels:
+    app: account-core
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: account-core
+  template:
+    metadata:
+      labels:
+        app: account-core
+    spec:
+      serviceAccountName: account-core-pubsub-ksa
+      containers:
+        - name: account-core-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/account-core-service:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8081
+            - name: grpc
+              containerPort: 9091
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: DB_URL
+              value: "jdbc:postgresql://136.112.87.173:5432/banquito"
+            - name: DB_USER
+              value: postgres
+            - name: DB_SCHEMA
+              value: account_core
+          envFrom:
+            - configMapRef:
+                name: banquito-config
+            - secretRef:
+                name: account-core-secrets
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 180
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 300m
+              memory: 768Mi
+            limits:
+              cpu: 750m
+              memory: 1Gi
+

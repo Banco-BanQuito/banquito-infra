@@ -1,0 +1,104 @@
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: file-reception-healthcheck
+  namespace: banquito-switch
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8084
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: file-reception-service
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: tariff-healthcheck
+  namespace: banquito-switch
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8086
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: tariff-service
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: clearinghouse-healthcheck
+  namespace: banquito-switch
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8087
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: clearinghouse-service
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: report-healthcheck
+  namespace: banquito-switch
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8088
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: report-service
+---
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: notification-healthcheck
+  namespace: banquito-switch
+spec:
+  default:
+    checkIntervalSec: 15
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+    config:
+      type: HTTP
+      httpHealthCheck:
+        port: 8089
+        requestPath: /actuator/health
+  targetRef:
+    group: ""
+    kind: Service
+    name: notification-service

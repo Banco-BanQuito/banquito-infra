@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounting-service
+  namespace: banquito-core
+  labels:
+    app: accounting
+spec:
+  type: ClusterIP
+  selector:
+    app: accounting
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+    - name: grpc
+      port: 9092
+      targetPort: 9092
+
