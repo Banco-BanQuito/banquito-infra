@@ -26,10 +26,10 @@ No se debe reutilizar una sola API Key para todos los frontends.
 
 | Secret en Secret Manager | Valor | Aplicacion |
 | --- | --- | --- |
-| `apigee-api-key-teller` | `<API_KEY_GENERADA_EN_APIGEE_PARA_TELLER>` | `banquito-teller-frontend` |
-| `apigee-api-key-operador` | `<API_KEY_GENERADA_EN_APIGEE_PARA_OPERADOR>` | `banquito-frontend-web-operador` |
-| `apigee-api-key-web-personas` | `<API_KEY_GENERADA_EN_APIGEE_PARA_WEB_PERSONAS>` | `banquito-web-personas-frontend` |
-| `apigee-api-key-web-empresas` | `<API_KEY_GENERADA_EN_APIGEE_PARA_WEB_EMPRESAS>` | `banquito-web-empresas-frontend` |
+| `app-teller` | API Key generada en Apigee para Teller | `banquito-teller-frontend` |
+| `app-operador` | API Key generada en Apigee para Operador | `banquito-frontend-web-operador` |
+| `app-web-personas` | API Key generada en Apigee para Web Personas | `banquito-web-personas-frontend` |
+| `app-web-empresas` | API Key generada en Apigee para Web Empresas | `banquito-web-empresas-frontend` |
 
 Estas claves deben ser entregadas por el responsable de Apigee/API Manager.
 
@@ -44,13 +44,13 @@ GitHub Actions lee los secretos desde Secret Manager usando Workload Identity y 
 | Repositorio | Variable temporal en GitHub Actions | Valor fuente |
 | --- | --- | --- |
 | `banquito-teller-frontend` | `IDENTITY_PLATFORM_API_KEY` | Secret Manager: `identity-platform-api-key` |
-| `banquito-teller-frontend` | `APIGEE_API_KEY` | Secret Manager: `apigee-api-key-teller` |
+| `banquito-teller-frontend` | `APIGEE_API_KEY` | Secret Manager: `app-teller` |
 | `banquito-frontend-web-operador` | `IDENTITY_PLATFORM_API_KEY` | Secret Manager: `identity-platform-api-key` |
-| `banquito-frontend-web-operador` | `APIGEE_API_KEY` | Secret Manager: `apigee-api-key-operador` |
+| `banquito-frontend-web-operador` | `APIGEE_API_KEY` | Secret Manager: `app-operador` |
 | `banquito-web-personas-frontend` | `IDENTITY_PLATFORM_API_KEY` | Secret Manager: `identity-platform-api-key` |
-| `banquito-web-personas-frontend` | `APIGEE_API_KEY` | Secret Manager: `apigee-api-key-web-personas` |
+| `banquito-web-personas-frontend` | `APIGEE_API_KEY` | Secret Manager: `app-web-personas` |
 | `banquito-web-empresas-frontend` | `IDENTITY_PLATFORM_API_KEY` | Secret Manager: `identity-platform-api-key` |
-| `banquito-web-empresas-frontend` | `APIGEE_API_KEY` | Secret Manager: `apigee-api-key-web-empresas` |
+| `banquito-web-empresas-frontend` | `APIGEE_API_KEY` | Secret Manager: `app-web-empresas` |
 
 ## Permiso necesario para GitHub Actions
 
@@ -82,9 +82,9 @@ Cada workflow frontend usa este patron:
 - name: Read frontend secrets from Secret Manager
   run: |
     echo "::add-mask::$(gcloud secrets versions access latest --secret=identity-platform-api-key --project "$PROJECT_ID")"
-    echo "::add-mask::$(gcloud secrets versions access latest --secret=apigee-api-key-teller --project "$PROJECT_ID")"
+    echo "::add-mask::$(gcloud secrets versions access latest --secret=app-teller --project "$PROJECT_ID")"
     echo "IDENTITY_PLATFORM_API_KEY=$(gcloud secrets versions access latest --secret=identity-platform-api-key --project "$PROJECT_ID")" >> "$GITHUB_ENV"
-    echo "APIGEE_API_KEY=$(gcloud secrets versions access latest --secret=apigee-api-key-teller --project "$PROJECT_ID")" >> "$GITHUB_ENV"
+    echo "APIGEE_API_KEY=$(gcloud secrets versions access latest --secret=app-teller --project "$PROJECT_ID")" >> "$GITHUB_ENV"
 ```
 
 Luego el build recibe:
