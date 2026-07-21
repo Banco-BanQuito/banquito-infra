@@ -30,6 +30,7 @@ data:
   GCP_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   PUBSUB_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   APP_PAYMENT_LINE_TRANSPORT: pubsub
+  APP_CORE_VALIDATION_ENABLED: "false"
   PUBSUB_TOPIC_PAYMENT_LINES: banquito-payment-lines
   PUBSUB_TOPIC_CLEARING_EVENTS: banquito-clearing-events
   PUBSUB_TOPIC_DEAD_LETTER: banquito-dead-letter
@@ -121,6 +122,7 @@ data:
   GCP_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   PUBSUB_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   APP_PAYMENT_LINE_TRANSPORT: pubsub
+  APP_CORE_VALIDATION_ENABLED: "false"
   PUBSUB_TOPIC_PAYMENT_LINES: banquito-payment-lines
   PUBSUB_TOPIC_CLEARING_EVENTS: banquito-clearing-events
   PUBSUB_TOPIC_DEAD_LETTER: banquito-dead-letter
@@ -212,6 +214,7 @@ data:
   GCP_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   PUBSUB_PROJECT_ID: project-47695a8e-7cb2-4352-af2
   APP_PAYMENT_LINE_TRANSPORT: pubsub
+  APP_CORE_VALIDATION_ENABLED: "false"
   PUBSUB_TOPIC_PAYMENT_LINES: banquito-payment-lines
   PUBSUB_TOPIC_CLEARING_EVENTS: banquito-clearing-events
   PUBSUB_TOPIC_DEAD_LETTER: banquito-dead-letter
