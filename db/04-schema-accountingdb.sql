@@ -23,6 +23,9 @@ CREATE TABLE journal_entry (
     id                   BIGSERIAL    PRIMARY KEY,
     entry_uuid           VARCHAR(36)  NOT NULL UNIQUE,    -- UUID de la transacción que lo originó
     description          VARCHAR(255) NOT NULL,
+    source_account_number      VARCHAR(80),
+    destination_account_number VARCHAR(80),
+    beneficiary_name           VARCHAR(150),
     entry_date           TIMESTAMP    NOT NULL DEFAULT NOW(),
     status               VARCHAR(15)  NOT NULL DEFAULT 'REGISTRADO' CHECK (status IN ('REGISTRADO','ANULADO')),
     reversal_of_entry_id BIGINT       REFERENCES journal_entry(id)  -- si este asiento es el reverso de otro
