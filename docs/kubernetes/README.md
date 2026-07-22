@@ -36,6 +36,10 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | [anexo-j-entrega-secret-manager-companero.md](anexo-j-entrega-secret-manager-companero.md) | Informacion exacta para que el equipo cree secretos en Secret Manager |
 | [anexo-k-pubsub-workload-identity.md](anexo-k-pubsub-workload-identity.md) | Migracion de RabbitMQ a Google Pub/Sub con Workload Identity |
 | [anexo-l-validacion-frontends-gateway.md](anexo-l-validacion-frontends-gateway.md) | Validacion de los cuatro frontends por GKE Gateway con una sola IP publica |
+| [anexo-n-validacion-completa-gke.md](anexo-n-validacion-completa-gke.md) | Validacion completa de Core, Switch y Frontends ejecutandose en GKE |
+| [anexo-o-https-duckdns-gateway.md](anexo-o-https-duckdns-gateway.md) | Configuracion HTTPS con DuckDNS, certificado administrado y GKE Gateway |
+| [anexo-p-secret-manager-csi-party-service.md](anexo-p-secret-manager-csi-party-service.md) | Lectura de `identity-platform-api-key` desde Secret Manager para `party-service` con Secret Sync |
+| [anexo-q-validacion-identity-platform-party.md](anexo-q-validacion-identity-platform-party.md) | Validacion funcional de creacion de usuarios Identity Platform desde `party-service` |
 
 ## Estado actual resumido
 
@@ -48,7 +52,7 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | Artifact Registry | `us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito` |
 | Namespaces | `banquito-core`, `banquito-switch`, `banquito-frontend`, `banquito-gateway` |
 | API Manager | Apigee, dominio `https://136.68.89.25.nip.io` |
-| Gateway GKE | `banquito-public-gateway` creado, pendiente validar IP publica final |
+| Gateway GKE | `banquito-public-gateway`, IP publica `8.233.141.65` |
 
 ## Documentos historicos
 

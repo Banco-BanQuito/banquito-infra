@@ -104,6 +104,23 @@ kubectl logs -n banquito-switch deployment/file-reception-service --tail=100
 
 Kubernetes descarga imagenes y crea Pods correctamente. Los fallos actuales de `CrashLoopBackOff` se deben a Secrets/credenciales reales pendientes, no a Docker ni a GKE.
 
+## Validacion completa 2026-07-20
+
+Se levanto Core y Switch por bloques hasta dejar los ocho backends en `1/1 Running`.
+
+Resumen:
+
+```text
+banquito-core:   3/3 Deployments Running
+banquito-switch: 5/5 Deployments Running
+```
+
+Detalle completo de comandos, logs, consumo y ajuste de resources:
+
+```text
+docs/kubernetes/anexo-n-validacion-completa-gke.md
+```
+
 ## Validacion gRPC entre Core y Switch
 
 Fecha de validacion: `2026-07-17`.

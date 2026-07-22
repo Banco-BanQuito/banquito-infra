@@ -154,6 +154,58 @@ minReplicas: 1
 
 HPA puede bajar de `3` a `2` y luego a `1`, pero no baja automaticamente a `0`.
 
+## Diferencia entre Deployment y HPA
+
+Hay dos comportamientos distintos:
+
+```text
+Deployment:
+  Mantiene la cantidad deseada de Pods.
+  Si un Pod se borra o falla, crea otro.
+
+HPA:
+  Cambia la cantidad deseada de replicas segun CPU o memoria.
+  No repara Pods directamente; ajusta replicas del Deployment.
+```
+
+Por eso se recomiendan dos pruebas separadas:
+
+```text
+1. Borrar un Pod para probar auto-recuperacion del Deployment.
+2. Generar carga para probar escalamiento del HPA.
+```
+
+### Validar auto-recuperacion del Deployment
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get pods -n banquito-core -l app=party
+kubectl --insecure-skip-tls-verify=true delete pod <pod-party-service> -n banquito-core
+kubectl --insecure-skip-tls-verify=true get pods -n banquito-core -l app=party -w
+```
+
+Resultado esperado:
+
+```text
+El Pod eliminado pasa a Terminating.
+El Deployment crea un Pod nuevo.
+El Pod nuevo termina en Running.
+```
+
+### Validar escalamiento del HPA
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get hpa -A
+kubectl --insecure-skip-tls-verify=true describe hpa account-core-service-hpa -n banquito-core
+kubectl --insecure-skip-tls-verify=true get pods -n banquito-core -w
+```
+
+Resultado esperado bajo carga:
+
+```text
+HPA sube replicas de 1 a 2 o 3.
+Cuando baja la carga, HPA reduce replicas hasta minReplicas=1.
+```
+
 Para dejar `0/0` en laboratorio se usa escalado manual:
 
 ```powershell
@@ -287,6 +339,51 @@ Comandos para revisar HPA y eventos:
 kubectl get hpa -A
 kubectl describe hpa account-core-service-hpa -n banquito-core
 kubectl get events -A --sort-by=.lastTimestamp
+```
+
+## Ajuste operativo validado el 2026-07-20
+
+Durante la prueba completa del sistema, `clearinghouse-service` quedo en `Pending` aunque Autopilot intento crear capacidad adicional.
+
+Evento observado:
+
+```text
+FailedScaleUp: GCE quota exceeded
+0/2 nodes are available: Insufficient cpu
+```
+
+El consumo real de los servicios era bajo, pero los `requests` reservados del bloque Switch impedian agendar el ultimo Pod. Se ajustaron los `requests` de Switch para laboratorio:
+
+| Servicio | Request CPU | Request memoria | Limit CPU | Limit memoria |
+| --- | ---: | ---: | ---: | ---: |
+| file-reception-service | 100m | 512Mi | 500m | 768Mi |
+| clearinghouse-service | 100m | 384Mi | 500m | 768Mi |
+| notification-service | 100m | 384Mi | 500m | 768Mi |
+| report-service | 100m | 384Mi | 500m | 768Mi |
+| tariff-service | 100m | 384Mi | 500m | 768Mi |
+
+Comandos usados para aplicar el ajuste en vivo:
+
+```powershell
+kubectl set resources deployment/clearinghouse-service -n banquito-switch --requests=cpu=100m,memory=384Mi --limits=cpu=500m,memory=768Mi
+
+kubectl set resources deployment/file-reception-service deployment/notification-service deployment/report-service deployment/tariff-service -n banquito-switch --requests=cpu=100m,memory=384Mi --limits=cpu=500m,memory=768Mi
+
+kubectl set resources deployment/file-reception-service -n banquito-switch --requests=cpu=100m,memory=512Mi --limits=cpu=500m,memory=768Mi
+```
+
+Resultado validado:
+
+```text
+banquito-core       3/3 Deployments Running
+banquito-switch     5/5 Deployments Running
+banquito-frontend   4/4 Deployments Running
+```
+
+Conclusion:
+
+```text
+La arquitectura estaba correcta. El bloqueo era de scheduling por cuota y requests altos para el laboratorio. Al reducir requests, Kubernetes pudo ubicar todos los Pods sin crear mas nodos.
 ```
 
 ## Eliminar HPA

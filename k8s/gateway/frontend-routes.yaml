@@ -9,6 +9,7 @@ spec:
       namespace: banquito-gateway
   hostnames:
     - personas.8.233.141.65.nip.io
+    - banquito-personas.duckdns.org
   rules:
     - matches:
         - path:
@@ -29,6 +30,7 @@ spec:
       namespace: banquito-gateway
   hostnames:
     - empresas.8.233.141.65.nip.io
+    - banquito-empresas.duckdns.org
   rules:
     - matches:
         - path:
@@ -49,6 +51,7 @@ spec:
       namespace: banquito-gateway
   hostnames:
     - teller.8.233.141.65.nip.io
+    - banquito-teller.duckdns.org
   rules:
     - matches:
         - path:
@@ -69,6 +72,7 @@ spec:
       namespace: banquito-gateway
   hostnames:
     - operador.8.233.141.65.nip.io
+    - banquito-operador.duckdns.org
   rules:
     - matches:
         - path:

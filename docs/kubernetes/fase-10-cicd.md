@@ -44,17 +44,41 @@ Por eso el pipeline debe hacer dos cosas:
 Para las aplicaciones BanQuito se recomienda:
 
 ```text
-Pipeline por repositorio de aplicacion:
+Pipeline de despliegue por repositorio de aplicacion:
   build
   docker build
   docker push
   kubectl set image
   kubectl rollout status
 
+Pipeline CI:
+  compile check
+  no despliega
+
+Pipeline SonarCloud:
+  pruebas
+  analisis de calidad
+  cobertura
+
 Pipeline de banquito-infra:
   aplicar manifiestos Kubernetes
   aplicar ConfigMap/Gateway/Deployments/Services
 ```
+
+Decision de buena practica:
+
+```text
+No mezclar despliegue, validacion rapida y cobertura en un solo workflow.
+Cada flujo tiene una responsabilidad diferente.
+```
+
+Separacion aplicada:
+
+| Workflow | Responsabilidad | Ejecuta pruebas |
+| --- | --- | --- |
+| `ci.yml` | Validacion rapida de compilacion | Temporalmente no |
+| `docker-publish.yml` | Build de imagen, push a Artifact Registry y deploy a GKE | No, para no bloquear despliegue por tests legacy |
+| `sonarcloud.yml` | Calidad, pruebas y cobertura | Si |
 
 ## Estado implementado
 
@@ -205,7 +229,7 @@ jobs:
           java-version: "21"
 
       - name: Build Maven
-        run: ./mvnw -q -DskipTests package
+        run: ./mvnw -q -Dmaven.test.skip=true package
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -247,6 +271,72 @@ jobs:
       - name: Verify rollout
         run: kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE --timeout=180s
 ```
+
+Regla aplicada:
+
+```text
+Si `kubectl rollout status` falla, el workflow de despliegue debe fallar.
+No se oculta el error como warning, porque un deploy que no queda disponible no debe marcarse como exitoso.
+```
+
+## Plantilla de CI rapido
+
+El workflow `ci.yml` queda solo para validar que el proyecto compila.
+
+```yaml
+name: CI Compile Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  compile:
+    name: Compile package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Build package
+        run: mvn -q -Dmaven.test.skip=true package
+```
+
+Nota:
+
+```text
+`maven.test.skip=true` es temporal mientras se estabilizan pruebas unitarias.
+Cuando las pruebas esten corregidas, este flujo puede cambiar a `mvn test` o `mvn verify`.
+```
+
+## Plantilla de SonarCloud
+
+SonarCloud debe ejecutar pruebas porque es el flujo responsable de calidad y cobertura.
+
+```yaml
+- name: Build and analyze
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  run: >
+    mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+    -DskipTests=false
+    -Dsonar.projectKey=<project-key>
+    -Dsonar.organization=banco-banquito
+    -Dsonar.host.url=https://sonarcloud.io
+```
+
+Si los tests estan rotos, Sonar debe fallar. Ese fallo corresponde a calidad/cobertura, no al despliegue operativo.
 
 ## Variables por microservicio
 

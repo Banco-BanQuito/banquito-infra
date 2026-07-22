@@ -3,7 +3,7 @@
 -- Servicios: party-service, tariff-service, file-reception-service
 --
 -- Ejecutar con:
---   mysql -h 136.111.132.119 -u root -p'Banquito123*' < mysql-schema.sql
+--   mysql -h 136.111.132.119 -u root -p < mysql-schema.sql
 -- ══════════════════════════════════════════════════════════════════════════════
 
 -- ── partydb (party-service — Santiago) ────────────────────────────────────────

@@ -14,9 +14,9 @@ Definir los secretos que faltan para completar la integracion de los frontends c
 
 | Secret | Valor | Uso |
 | --- | --- | --- |
-| `identity-platform-api-key` | `AIzaSyA1NaB2rnIr0Itt8zQmMPruM8xjeLseuzY` | Web API Key de Identity Platform. La usan los 4 frontends para login. |
-| `identity-platform-switch-service-password` | `12345678` | Password del usuario tecnico `switch-service@banquito.internal` para integraciones Switch -> Core. |
-| `identity-platform-clients-temp-password` | `Banquito2026!` | Password temporal para pruebas con clientes migrados a Identity Platform. |
+| `identity-platform-api-key` | Guardado en Secret Manager | Web API Key de Identity Platform. La usan los 4 frontends para login. |
+| `identity-platform-switch-service-password` | Guardado en Secret Manager | Password del usuario tecnico `switch-service@banquito.internal` para integraciones Switch -> Core. |
+| `identity-platform-clients-temp-password` | Guardado en Secret Manager | Password temporal para pruebas con clientes migrados a Identity Platform. |
 
 ## API Keys que debe generar Apigee
 
@@ -105,21 +105,21 @@ PROJECT_ID="project-47695a8e-7cb2-4352-af2"
 ### Identity Platform
 
 ```bash
-printf 'AIzaSyA1NaB2rnIr0Itt8zQmMPruM8xjeLseuzY' | gcloud secrets create identity-platform-api-key \
+printf '<IDENTITY_PLATFORM_API_KEY>' | gcloud secrets create identity-platform-api-key \
   --project "$PROJECT_ID" \
   --replication-policy automatic \
   --data-file=-
 ```
 
 ```bash
-printf '12345678' | gcloud secrets create identity-platform-switch-service-password \
+printf '<SWITCH_SERVICE_PASSWORD>' | gcloud secrets create identity-platform-switch-service-password \
   --project "$PROJECT_ID" \
   --replication-policy automatic \
   --data-file=-
 ```
 
 ```bash
-printf 'Banquito2026!' | gcloud secrets create identity-platform-clients-temp-password \
+printf '<CLIENTS_TEMP_PASSWORD>' | gcloud secrets create identity-platform-clients-temp-password \
   --project "$PROJECT_ID" \
   --replication-policy automatic \
   --data-file=-

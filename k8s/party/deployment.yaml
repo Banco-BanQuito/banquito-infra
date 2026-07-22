@@ -17,6 +17,7 @@ spec:
       labels:
         app: party
     spec:
+      serviceAccountName: party-secretmanager-ksa
       containers:
         - name: party-service
           image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/party-service:latest
@@ -33,6 +34,16 @@ spec:
               value: "jdbc:mysql://136.111.132.119:3306/partydb"
             - name: DB_USER
               value: root
+            - name: IDENTITY_PLATFORM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: party-identity-platform-secrets
+                  key: api-key
+            - name: IDENTITY_PLATFORM_DEFAULT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: party-identity-platform-secrets
+                  key: default-password
           envFrom:
             - configMapRef:
                 name: banquito-config
@@ -52,7 +63,7 @@ spec:
             periodSeconds: 20
           resources:
             requests:
-              cpu: 250m
+              cpu: 100m
               memory: 512Mi
             limits:
               cpu: 500m

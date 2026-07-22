@@ -76,6 +76,30 @@ kubectl scale deployment --all --replicas=0 -n banquito-frontend
 
 Cuando los Pods esten en `CrashLoopBackOff`, `Pending` o no se este probando runtime, se pueden dejar los backends en `0/0` para reducir consumo mientras se corrigen Secrets, bases de datos o RabbitMQ.
 
+Esta operacion no elimina recursos. Solo cambia la cantidad de replicas de los `Deployments`.
+
+No se afecta DuckDNS si solo se apagan pods:
+
+```text
+banquito-personas.duckdns.org
+banquito-empresas.duckdns.org
+banquito-teller.duckdns.org
+banquito-operador.duckdns.org
+```
+
+DuckDNS solo resuelve los dominios hacia la IP publica del Gateway. Esa IP se mantiene mientras no se eliminen los recursos de entrada.
+
+No eliminar si se quiere conservar DuckDNS/HTTPS:
+
+```text
+Gateway
+HTTPRoute
+Services
+Namespaces
+IP publica
+Certificado administrado
+```
+
 Comandos usados en este entorno:
 
 ```powershell
@@ -122,6 +146,35 @@ Apagar todo:
 kubectl scale deployment --all --replicas=0 -n banquito-core
 kubectl scale deployment --all --replicas=0 -n banquito-switch
 kubectl scale deployment --all --replicas=0 -n banquito-frontend
+```
+
+Verificar que los dominios siguen resolviendo:
+
+```powershell
+nslookup banquito-personas.duckdns.org
+nslookup banquito-empresas.duckdns.org
+nslookup banquito-teller.duckdns.org
+nslookup banquito-operador.duckdns.org
+```
+
+Resultado esperado:
+
+```text
+Address: 8.233.141.65
+```
+
+Verificar que el Gateway sigue existiendo:
+
+```powershell
+kubectl get gateway -A
+kubectl get httproute -A
+```
+
+Nota:
+
+```text
+Con los pods apagados, los dominios pueden abrir pero devolver 503/404/timeout porque no hay backend disponible.
+Eso es normal. El DNS y la IP no estan rotos; solo no hay Pods atendiendo trafico.
 ```
 
 ## Error comun

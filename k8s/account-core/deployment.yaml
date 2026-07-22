@@ -45,19 +45,19 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 90
+            initialDelaySeconds: 240
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 420
             periodSeconds: 20
           resources:
             requests:
-              cpu: 300m
-              memory: 768Mi
+              cpu: 100m
+              memory: 512Mi
             limits:
-              cpu: 750m
-              memory: 1Gi
+              cpu: 500m
+              memory: 768Mi
 
