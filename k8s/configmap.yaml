@@ -5,6 +5,9 @@ metadata:
   namespace: banquito-core
 data:
   ENVIRONMENT: demo
+  TZ: America/Guayaquil
+  APP_FORCE_BUSINESS_DAY: "true"
+  APP_CUTOFF_HOUR: "23"
 
   API_MANAGER_URL: https://136.68.89.25.nip.io
   CORE_GATEWAY_URL: https://136.68.89.25.nip.io/api/v2
@@ -97,6 +100,9 @@ metadata:
   namespace: banquito-switch
 data:
   ENVIRONMENT: demo
+  TZ: America/Guayaquil
+  APP_FORCE_BUSINESS_DAY: "true"
+  APP_CUTOFF_HOUR: "23"
 
   API_MANAGER_URL: https://136.68.89.25.nip.io
   CORE_GATEWAY_URL: http://account-core-service.banquito-core.svc.cluster.local:8081
@@ -189,6 +195,9 @@ metadata:
   namespace: banquito-frontend
 data:
   ENVIRONMENT: demo
+  TZ: America/Guayaquil
+  APP_FORCE_BUSINESS_DAY: "true"
+  APP_CUTOFF_HOUR: "23"
 
   API_MANAGER_URL: https://136.68.89.25.nip.io
   CORE_GATEWAY_URL: https://136.68.89.25.nip.io/api/v2
