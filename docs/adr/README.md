@@ -8,8 +8,8 @@ Core Bancario y Switch de Pagos como dos procesos Spring Boot separados, en una 
 ## [Fase 2 — Microservicios (Segundo Parcial)](fase-2-microservicios/README.md)
 División en 8 microservicios, cada uno con su propia base de datos, comunicación por gRPC/REST/RabbitMQ, API Gateway con Kong, despliegue con Docker Compose + Watchtower.
 
-## [Fase 3 — Kubernetes, Identity Platform y API Manager (Proyecto Final)](fase-3-kubernetes-identity/README.md)
-Migración a GKE, Identity Platform como OAuth2 en la nube, Apigee como API Manager, y Secret Manager como baúl de secretos.
+## [Fase 3 — Kubernetes, Identity Platform, API Manager y Broker (Proyecto Final)](fase-3-kubernetes-identity/README.md)
+Migración a GKE, Identity Platform como OAuth2 en la nube, Apigee como API Manager, Secret Manager como baúl de secretos, y Pub/Sub como broker de mensajes en la nube.
 
 ---
 
