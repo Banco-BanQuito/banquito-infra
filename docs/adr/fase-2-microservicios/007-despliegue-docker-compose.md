@@ -7,15 +7,15 @@ Aceptado
 El enunciado de esta fase exige Docker Compose (Kubernetes queda diferido al 3er parcial) y un flujo de CI/CD que permita publicar cambios sin intervención manual repetitiva en la VM de despliegue.
 
 ## Decisión
-- Todo el stack (13 microservicios, 4 frontends, Kong x2, RabbitMQ, Swagger, Watchtower) se define en un único `docker-compose.yml` en `banquito-infra`, parametrizado con variables de entorno (`.env`, nunca credenciales quemadas — ver bloque de infraestructura).
-- Cada repo de microservicio/frontend tiene su propio pipeline de GitHub Actions que construye y publica su imagen a GHCR (`ghcr.io/banco-banquito/<servicio>`) en cada push a `main`.
-- **Watchtower** corre en la VM y revisa GHCR cada minuto; si encuentra una imagen `:latest` más nueva que la corriendo, recrea el contenedor automáticamente.
+- Todo el stack (13 microservicios, 4 frontends, las dos instancias de Kong, RabbitMQ, Swagger, Watchtower) se define en un único archivo de Docker Compose, en el repositorio de infraestructura, con las variables sensibles guardadas aparte y nunca escritas directamente en el archivo.
+- Cada repositorio de microservicio o frontend tiene su propio flujo automático en GitHub Actions que construye y publica su imagen cada vez que se sube un cambio a la rama principal.
+- Watchtower corre en la máquina virtual y revisa cada minuto si hay una imagen más nueva que la que está corriendo; si la encuentra, recrea el contenedor automáticamente, sin que nadie tenga que entrar a la VM.
 
-## Por qué Watchtower y no un pipeline de despliegue explícito (ej. SSH + `docker compose pull` por GitHub Actions)
-Con 13 repos independientes, coordinar un despliegue push-based desde cada pipeline hacia la VM requeriría exponer credenciales SSH de la VM en cada uno de los 13 repos. Watchtower invierte el flujo a pull-based: la VM decide cuándo actualizar, y ningún repo necesita credenciales de infraestructura.
+## Por qué Watchtower y no un despliegue explícito iniciado desde GitHub Actions
+Con 13 repositorios independientes, hacer que cada uno se conecte directo a la VM para desplegar exigiría darle a los 13 repositorios acceso remoto a esa máquina. Watchtower invierte el flujo: es la VM la que decide cuándo actualizar, revisando por su cuenta si hay algo nuevo, y ningún repositorio necesita tener acceso a la infraestructura de producción.
 
 ## Consecuencias
-- (+) Despliegue continuo real: un `git push` a cualquier microservicio termina corriendo en producción en menos de 5 minutos sin acción manual.
-- (+) Ningún repositorio de aplicación necesita secretos de la VM de producción.
-- (-) Los cambios que requieren modificar `docker-compose.yml` (nuevas variables de entorno, nuevas redes, nuevos puertos) **no** los aplica Watchtower — exigen un `git pull` + `docker compose up -d --force-recreate` manual en la VM, ya documentado como paso operativo.
-- (-) No hay rollback automático: si una imagen nueva rompe el servicio, hay que revertir el commit y esperar el siguiente ciclo de build, o intervenir manualmente.
+- A favor: hay entrega continua real — un cambio subido a cualquier microservicio termina corriendo en producción en menos de 5 minutos, sin ninguna acción manual.
+- A favor: ningún repositorio de aplicación necesita guardar contraseñas ni accesos de la VM de producción.
+- En contra: los cambios que requieren modificar el archivo de Docker Compose en sí (nuevas variables, nuevas redes, nuevos puertos) no los aplica Watchtower — exigen entrar a la VM y aplicar el cambio a mano, un paso ya documentado como parte de la operación.
+- En contra: no hay una forma automática de revertir — si una imagen nueva rompe el servicio, hay que deshacer el cambio en el código y esperar al siguiente ciclo, o intervenir manualmente.

@@ -4,16 +4,16 @@
 Aceptado
 
 ## Contexto
-`account_transaction` es la tabla de mayor crecimiento del sistema (cada depósito, retiro, transferencia o pago la inserta). Sin una estrategia de archivado, las consultas operativas (consulta de movimientos recientes en banca web) se degradan a medida que crece el histórico, y el documento de requisitos del Core exige explícitamente separar "data caliente" de "data fría".
+La tabla de transacciones de cuenta es la que más crece de todo el sistema — cada depósito, retiro, transferencia o pago le agrega una fila. Sin una estrategia para organizar ese crecimiento, las consultas normales (por ejemplo, ver los movimientos recientes en banca web) se vuelven cada vez más lentas a medida que crece el histórico, y el documento de requisitos del Core exige explícitamente separar los datos recientes de los datos antiguos.
 
 ## Decisión
-`account_transaction` se crea con `PARTITION BY RANGE (transaction_date)`, con una partición física por mes (`account_transaction_2026_01`, `account_transaction_2026_02`, ...) y una partición `DEFAULT` (`account_transaction_historico`) que recibe cualquier fecha fuera del rango declarado explícitamente.
+La tabla de transacciones se divide físicamente por mes: cada mes tiene su propia partición dentro de la base de datos, y existe una partición adicional que recibe cualquier fecha fuera de lo esperado.
 
-## Por qué Range Partitioning por fecha y no por otro criterio
-El patrón de acceso dominante es "dame los movimientos de los últimos N meses de esta cuenta", por lo que particionar por fecha permite que Postgres descarte particiones completas (partition pruning) en vez de escanear todo el histórico. Particionar por `account_id` no ayudaría a este patrón de consulta y complicaría el archivado por antigüedad.
+## Por qué dividir por fecha y no por otro criterio
+La forma más común de consultar esta tabla es "dame los movimientos de los últimos meses de esta cuenta", así que dividir por fecha permite que la base de datos descarte de entrada las particiones que no le sirven para esa consulta, en vez de revisar todo el histórico completo. Dividir por número de cuenta, en cambio, no ayudaría a este tipo de consulta y complicaría separar lo antiguo de lo reciente.
 
 ## Consecuencias
-- (+) Las consultas de movimientos recientes solo tocan 1-2 particiones (las del mes actual y anterior).
-- (+) Permite "enfriar" datos antiguos (ej. mover una partición vieja a almacenamiento más barato) sin tocar la tabla lógica ni el código de la aplicación.
-- (-) La clave primaria debe incluir la columna de partición (`PRIMARY KEY (id, transaction_date)`), lo que exige que cualquier UPDATE/DELETE por solo `id` especifique también la fecha o se resuelva vía índice secundario.
-- (-) Requiere un job de mantenimiento (manual o programado) para crear la partición del mes siguiente con anticipación.
+- A favor: las consultas de movimientos recientes solo tocan una o dos particiones — la del mes actual y la del anterior — en vez de toda la tabla.
+- A favor: permite mover después los datos antiguos a un almacenamiento más barato sin tocar la tabla completa ni el código de la aplicación.
+- En contra: la forma en que se identifica cada fila de manera única tiene que incluir también la fecha, no solo el identificador — así que cualquier actualización o borrado por identificador necesita también saber la fecha, o resolverse de otra forma.
+- En contra: requiere una tarea de mantenimiento, manual o programada, para crear con anticipación la partición del mes siguiente.

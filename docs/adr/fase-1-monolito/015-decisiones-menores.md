@@ -18,7 +18,7 @@ Al revisar el código de los 4 repositorios de esta fase, aparecieron varios det
 
 **La versión de la API va fija en la URL** (`/core/v1/`, `/switch/v1/`), no en un encabezado. Es la forma más simple de versionar una API, suficiente para un sistema con un solo consumidor por endpoint.
 
-**El Core deja entrar peticiones de cualquier origen (CORS abierto); el Switch solo acepta una lista fija de orígenes conocidos.** El Switch, al manejar pagos masivos, quedó más restringido — probablemente porque se reescribió más tarde que el Core y ahí sí se pensó en este detalle.
+**El Core deja entrar peticiones desde cualquier sitio web; el Switch solo acepta una lista fija de sitios conocidos.** (Esta regla de "quién puede llamar a la API desde el navegador" se llama CORS). El Switch, al manejar pagos masivos, quedó más restringido — probablemente porque se reescribió más tarde que el Core y ahí sí se pensó en este detalle.
 
 **Las variables de entorno tienen un valor por defecto escrito en el mismo archivo de configuración**, en vez de tener un archivo distinto para desarrollo y otro para producción. Esto permite mover el mismo programa compilado entre la laptop de un desarrollador y la VM sin mantener dos archivos sincronizados a mano.
 

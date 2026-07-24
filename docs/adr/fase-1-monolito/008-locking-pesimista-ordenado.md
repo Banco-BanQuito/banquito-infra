@@ -5,10 +5,10 @@
 **Autor:** Equipo Fase 1
 
 ## Decisión
-Toda operación que mueve saldo bloquea la fila de la cuenta con `SELECT ... FOR UPDATE`, y en las transferencias (que tocan dos cuentas), siempre se bloquean en orden alfabético por número de cuenta, sin importar el sentido de la transferencia.
+Toda operación que mueve saldo bloquea la fila de la cuenta en la base de datos apenas la lee, y en las transferencias (que tocan dos cuentas), siempre se bloquean en orden alfabético por número de cuenta, sin importar el sentido de la transferencia.
 
 ## Contexto
-Dos transferencias cruzadas al mismo tiempo (A le transfiere a B, mientras B le transfiere a A) pueden trabarse entre sí (deadlock) si cada una bloquea las cuentas en un orden distinto — una espera lo que tiene bloqueada la otra, y viceversa.
+Dos transferencias cruzadas al mismo tiempo (A le transfiere a B, mientras B le transfiere a A) pueden trabarse entre sí si cada una bloquea las cuentas en un orden distinto — una espera a que la otra suelte lo que tiene bloqueado, y la otra espera lo mismo de la primera, sin que ninguna avance nunca.
 
 ## Opciones consideradas
 1. **(SELECCIONADA) Bloqueo pesimista con orden fijo:** se bloquean las filas desde el inicio, siempre en el mismo orden (alfabético), sin importar quién transfiere a quién.

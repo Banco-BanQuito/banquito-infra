@@ -5,7 +5,7 @@
 **Autor:** Equipo Fase 3
 
 ## Decisión
-Se usa Apigee como API Manager de la entrega final. Apigee valida el token de Identity Platform con la política `VerifyJWT`, comparando la firma contra las llaves públicas de Identity Platform, sin necesitar preguntarle a Identity Platform en cada llamada.
+Se usa Apigee como API Manager de la entrega final. Apigee valida el token de Identity Platform con una política de verificación de token que trae integrada, comparando la firma contra las llaves públicas de Identity Platform, sin necesitar preguntarle a Identity Platform en cada llamada.
 
 ## Contexto
 El proyecto final pide que el API Manager sea un servicio de la nube, que se integre con OAuth2, y que cada aplicación cliente tenga su propia API Key. Kong (usado en la Fase 2) es open source y corre en un contenedor propio — no cumple el requisito de "servicio de nube" para esta entrega final.

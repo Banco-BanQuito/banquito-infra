@@ -5,7 +5,7 @@
 **Autor:** Equipo Fase 1
 
 ## Decisión
-El lote se procesa en segundo plano con `@Async`, línea por línea: si una línea falla, se marca como rechazada y el resto del lote sigue. La comisión por transacción sale de una tabla configurable; el IVA queda fijo al 15% en el código.
+El lote se procesa en segundo plano, sin bloquear al usuario, línea por línea: si una línea falla, se marca como rechazada y el resto del lote sigue. La comisión por transacción sale de una tabla configurable; el IVA queda fijo al 15% en el código.
 
 ## Contexto
 Un lote de nómina puede tener cientos de beneficiarios. Si uno solo tiene una cuenta cerrada o inválida, el resto (los sueldos de los demás empleados) no debe quedar bloqueado ni revertido.
@@ -20,7 +20,7 @@ Un lote de nómina puede tener cientos de beneficiarios. Si uno solo tiene una c
 **Opción 1 (SELECCIONADA) — Procesamiento por línea**
 - Seleccionada porque así funciona un switch de pagos real: el beneficiario 47 con una cuenta cerrada no puede ser motivo para que los otros 299 empleados no reciban su sueldo ese mes.
 - Se agregó además un revisor que corre cada 10 minutos y recupera lotes que quedaron atascados — pensado para el caso en que el proceso se caiga a mitad de un lote.
-- Con esta opción, si el proceso se reinicia a mitad de un lote, el trabajo en segundo plano (`@Async`) no se guarda en ningún lado — el sistema no sabe automáticamente que debe seguir donde se quedó. Esto lo resuelve RabbitMQ en la Fase 2, con colas que sí sobreviven a un reinicio.
+- Con esta opción, si el proceso se reinicia a mitad de un lote, el trabajo que estaba corriendo en segundo plano no se guarda en ningún lado — el sistema no sabe automáticamente que debe seguir donde se quedó. Esto lo resuelve RabbitMQ en la Fase 2, con colas que sí sobreviven a un reinicio.
 
 **Opción 2 — Transacción todo-o-nada**
 - Rechazada porque un solo beneficiario con error tumbaría el pago de todos los demás — comportamiento que no tiene sentido para un sistema de nómina real.

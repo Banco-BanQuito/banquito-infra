@@ -5,7 +5,7 @@
 **Autor:** Equipo Fase 3
 
 ## Decisión
-El sistema se despliega en GKE (Kubernetes de Google Cloud). Cada repositorio actualiza su servicio con `kubectl set image` desde GitHub Actions, autenticado con Workload Identity Federation, sin llaves guardadas como secreto.
+El sistema se despliega en GKE, que es Kubernetes administrado por Google Cloud. Cada repositorio actualiza su servicio directamente desde GitHub Actions, autenticado con un mecanismo llamado Workload Identity Federation, que confirma la identidad de GitHub Actions ante Google Cloud sin guardar ninguna llave como secreto.
 
 ## Contexto
 El proyecto final pide un orquestador de contenedores real, provisto por la nube. Docker Compose sobre una sola VM funcionó bien en fases anteriores, pero no es un orquestador real: no reinicia servicios solo si falla un nodo, no escala automáticamente, no actualiza sin cortar el servicio.

@@ -5,7 +5,7 @@
 **Autor:** Equipo Fase 1
 
 ## Decisión
-El login revisa usuario y contraseña contra las tablas `CORE_USER` (operadores) y `WEB_CREDENTIAL` (clientes), con la contraseña protegida con BCrypt, y devuelve los datos del usuario sin ningún token.
+El login revisa usuario y contraseña contra la tabla de operadores (en el Core) y la tabla de clientes (en el Switch), con la contraseña protegida con un cifrado especial para contraseñas, y devuelve los datos del usuario sin ningún token.
 
 ## Contexto
 Se necesitaba login para dos tipos de usuario: operadores de agencia (intranet del Core) y clientes empresariales (portal web y SFTP del Switch). El enunciado de esta fase no pedía todavía un esquema de autorización con tokens — el foco era que el flujo de negocio funcionara de punta a punta.
@@ -19,7 +19,7 @@ Se necesitaba login para dos tipos de usuario: operadores de agencia (intranet d
 
 **Opción 1 (SELECCIONADA) — Usuario/contraseña sin token**
 - Seleccionada porque el objetivo de esta fase era demostrar el flujo de negocio completo, no un esquema de seguridad de API — construir JWT o sesiones hubiera consumido tiempo sin ser parte de lo evaluado en este parcial.
-- Con esta opción, el hash de la contraseña sí queda bien hecho (BCrypt), pero ningún endpoint del backend valida quién está llamando — la única protección es que el frontend no llame rutas indebidas, no que el servidor las rechace.
+- Con esta opción, la contraseña sí queda bien protegida al guardarla, pero ningún endpoint del backend valida quién está llamando — la única protección es que el frontend no llame rutas indebidas, no que el servidor las rechace.
 - Con esta opción no hay límite de intentos de login, dejando la puerta abierta a ataques de fuerza bruta.
 
 **Opción 2 — Usuario/contraseña con JWT**

@@ -5,7 +5,7 @@
 **Autor:** Equipo Fase 1
 
 ## Decisión
-Se usa `ddl-auto=update` en ambos backends: Hibernate crea y ajusta las tablas solo, a partir de las clases del código, sin escribir scripts de migración.
+Se configura a Hibernate (la herramienta que conecta el código con la base de datos) para que cree y ajuste las tablas solo, a partir de las clases del código, sin escribir scripts de migración.
 
 ## Contexto
 El esquema de ambas bases de datos cambió seguido durante el mes de desarrollo, a medida que se iba entendiendo mejor el negocio.

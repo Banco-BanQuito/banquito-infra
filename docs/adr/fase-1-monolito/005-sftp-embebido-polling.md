@@ -5,21 +5,21 @@
 **Autor:** Equipo Fase 1
 
 ## Decisión
-Se levanta un servidor SFTP dentro del propio proceso del Switch, con Apache MINA SSHD, revisando cada cierto tiempo (polling) si hay archivos nuevos, y usando las mismas credenciales del portal web para autenticar al cliente.
+Se levanta un servidor SFTP (el protocolo para subir archivos por internet de forma segura) dentro del propio proceso del Switch, revisando cada cierto tiempo si hay archivos nuevos, y usando las mismas credenciales del portal web para autenticar al cliente.
 
 ## Contexto
 Una empresa cliente debe poder dejar su archivo de nómina en un buzón sin tener el portal web abierto, incluso fuera de horario laboral — el canal debe funcionar solo, sin que nadie esté conectado.
 
 ## Opciones consideradas
-1. **(SELECCIONADA) SFTP embebido con Apache MINA SSHD + polling:** el propio proceso del Switch corre el servidor SFTP y revisa la carpeta de archivos cada cierto tiempo.
-2. **Servidor SFTP externo (por ejemplo OpenSSH) gestionado aparte:** un proceso separado recibe el archivo y avisa al Switch.
-3. **Detección por evento del sistema de archivos (`WatchService`/inotify):** en vez de revisar cada cierto tiempo, el sistema avisa apenas llega un archivo nuevo.
+1. **(SELECCIONADA) Servidor SFTP dentro del mismo proceso, revisando la carpeta cada cierto tiempo:** el propio proceso del Switch corre el servidor SFTP y revisa la carpeta de archivos cada cierto tiempo.
+2. **Servidor SFTP externo, gestionado aparte:** un proceso separado recibe el archivo y avisa al Switch.
+3. **Detección automática por evento del sistema de archivos:** en vez de revisar cada cierto tiempo, el sistema avisa apenas llega un archivo nuevo.
 
 ## Compensaciones
 
-**Opción 1 (SELECCIONADA) — SFTP embebido con polling**
+**Opción 1 (SELECCIONADA) — Servidor SFTP dentro del mismo proceso**
 - Seleccionada porque, al vivir dentro del mismo proceso del Switch, reutiliza directamente la validación de credenciales y el envío al motor de procesamiento que ya existían — sin necesitar un segundo proceso ni un canal de comunicación adicional.
-- Seleccionada porque reutilizar la misma credencial del portal web (`WebCredential`) evita tener dos contraseñas por cliente que se puedan desincronizar.
+- Seleccionada porque reutilizar la misma credencial del portal web evita tener dos contraseñas por cliente que se puedan desincronizar.
 - Con esta opción, si se corrieran dos copias del Switch al mismo tiempo, ambas podrían intentar procesar el mismo archivo nuevo a la vez, duplicando el pago (mitigado en parte con un control de archivos repetidos).
 - El valor de revisión por defecto en el código es de 1 segundo, pero en producción tuvo que subirse a 10 segundos porque generaba demasiada carga en la máquina compartida.
 

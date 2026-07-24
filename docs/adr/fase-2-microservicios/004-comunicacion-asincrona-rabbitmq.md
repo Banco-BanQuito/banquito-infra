@@ -4,20 +4,20 @@
 Aceptado
 
 ## Contexto
-El Switch de Pagos Masivos debe procesar archivos de miles de líneas sin bloquear al cliente HTTP (Banca Web Empresas) ni acoplar la velocidad de ingesta a la velocidad de procesamiento del Core. El enunciado exige explícitamente RabbitMQ (prohibido Kafka) y un modelo Publicador-Suscriptor real con Exchanges y Routing Keys, no solo colas directas.
+El Switch de Pagos Masivos debe procesar archivos de miles de líneas sin dejar esperando al usuario que sube el archivo, y sin que la velocidad de recepción del archivo dependa de qué tan rápido el Core procese cada línea. El enunciado exige explícitamente usar RabbitMQ (Kafka no está permitido) y un modelo real de Publicador-Suscriptor, no solo una cola simple.
 
 ## Decisión
-- Se usa **RabbitMQ** como único broker.
-- Cada flujo asíncrono tiene un **Exchange `direct`** dedicado con su **Routing Key**, en lugar de publicar directo al exchange default:
-  - `payment.exchange` (Direct, routing key según clasificación: `onus`/`offus`/`invalid`) → colas `payment.lines.onus.queue`/`payment.lines.offus.queue`/`payment.lines.invalid.queue`: `file-reception-service` publica cada línea ya clasificada y las consume ella misma con `concurrency 5-20` (ver ADR-011). El Exchange, no un microservicio de ruteo, decide a qué cola llega cada línea.
-  - `clearing.exchange` (routing key `clearing.outbound`) → `clearing.outbound.queue`: `file-reception-service` y `account-core-service` publican transacciones Off-Us; `clearinghouse-service` consume.
-- El acuse de recibo es **automático** (modo `AUTO` de Spring AMQP): el contenedor confirma el mensaje tras procesarlo sin excepción, y lo reencola si falla.
+- Se usa RabbitMQ como único broker de mensajes.
+- Cada flujo asíncrono se publica a un punto de entrada (un "Exchange") que decide a qué cola mandar cada mensaje según una etiqueta, en vez de publicar directo a una cola fija:
+  - Las líneas de pago se publican con una etiqueta según su clasificación (dentro del banco, hacia otro banco, o inválida), y van a la cola correspondiente. file-reception-service publica cada línea ya clasificada y las consume ella misma (ver ADR-011). Es el Exchange, no un microservicio de ruteo, el que decide a qué cola llega cada línea.
+  - Las transacciones hacia otros bancos se publican con su propia etiqueta: file-reception-service y account-core-service publican, y clearinghouse-service consume.
+- La confirmación de que un mensaje se procesó bien es automática: si el consumidor no lanza ningún error, el mensaje se da por recibido; si falla, vuelve a la cola.
 
-## Por qué Exchange + Routing Key y no solo nombre de cola
-Publicar directo a una cola por nombre (exchange default) funciona, pero es un patrón de "Work Queue" punto a punto, no Pub-Sub. Declarar un Exchange explícito permite, sin cambiar el código del publicador, añadir más colas/consumidores suscritos al mismo evento en el futuro (ej. un futuro servicio de auditoría que también necesite ver cada línea de pago).
+## Por qué este modelo y no solo una cola con nombre fijo
+Publicar directo a una cola por nombre funciona, pero es un modelo de "un publicador, un consumidor", no de Publicador-Suscriptor real. Usar un punto de entrada que reparte a varias colas permite, sin cambiar el código del que publica, agregar más colas y más consumidores suscritos al mismo evento en el futuro — por ejemplo, un futuro servicio de auditoría que también necesite ver cada línea de pago.
 
 ## Consecuencias
-- (+) El Switch responde con `202 Accepted` de inmediato al subir un archivo; el procesamiento real ocurre fuera del ciclo de vida de esa petición HTTP.
-- (+) Un fallo temporal en el Core (ver ADR-009) no tira el archivo completo: cada línea fallida se reporta individualmente sin afectar las demás.
-- (+) El modelo es extensible a más suscriptores sin tocar el publicador (justifica el uso de Exchange/Routing Key en vez de colas directas).
-- (-) Requiere operar RabbitMQ (actualmente como contenedor Docker en la misma VM, no como servicio gestionado — ver limitación documentada en el bloque de infraestructura).
+- A favor: el Switch responde de inmediato al subir un archivo, con un código de éxito, antes de que termine el procesamiento real — el procesamiento ocurre después, fuera de esa misma petición.
+- A favor: un fallo temporal en el Core (ver ADR-009) no tira el archivo completo — cada línea fallida se reporta individualmente sin afectar a las demás.
+- A favor: el modelo permite agregar más consumidores sin tocar el código del que publica.
+- En contra: requiere operar RabbitMQ como una pieza más de infraestructura — actualmente corre como un contenedor en la misma máquina virtual, no como un servicio administrado por un proveedor de nube (ver la limitación documentada más adelante en el bloque de infraestructura).
