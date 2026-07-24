@@ -1,19 +1,26 @@
-# ADR-010 (Fase 1): Frontends con stacks tecnológicos independientes por dominio
+# ADR-010 (Fase 1): Cada frontend con su propio stack tecnológico
 
-## Estado
-Aceptado (histórico)
-
-## Contexto
-Core y Switch necesitaban interfaces web separadas (intranet de operadores para el Core; portal empresarial para el Switch), construidas por sub-equipos que trabajaban en paralelo sobre dominios distintos.
+**Estado:** Aceptado (histórico)
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-Frontend del Core: React 19 + JSX + Context API + Tailwind, con axios y un interceptor de request central. Frontend del Switch: TypeScript sin framework de componentes — manipulación directa del DOM (`document.querySelector`), estado global propio persistido en `localStorage`, servido originalmente por un servidor Node.js HTTP nativo (reemplazado por Nginx en el despliegue final).
+El frontend del Core se hizo en React con Tailwind. El frontend del Switch se hizo en TypeScript, sin ningún framework de componentes.
 
-## Por qué no unificar ambos frontends en el mismo stack
-Unificar hubiera exigido que uno de los dos sub-equipos abandonara la herramienta con la que ya tenía velocidad de desarrollo, a mitad de un plazo de un mes, para adoptar la del otro equipo. Dado que cada frontend consume una API completamente distinta (Core vs. Switch) y no comparten componentes de UI entre sí, el costo de estandarizar no se traducía en beneficio real de reutilización de código — cada equipo entregó más rápido usando la herramienta que ya dominaba.
+## Contexto
+Core y Switch necesitaban interfaces web separadas (intranet de operadores para el Core, portal para clientes empresariales en el Switch), construidas por sub-equipos distintos trabajando en paralelo.
 
-## Consecuencias
-- (+) Cada sub-equipo pudo avanzar en paralelo sin bloquearse esperando decisiones de arquitectura frontend compartidas.
-- (-) Mayor costo de mantenimiento a largo plazo: un desarrollador que rota entre ambos frontends debe operar con dos paradigmas de UI completamente distintos (componentes declarativos vs. manipulación imperativa del DOM).
-- (-) El interceptor de axios del Core prueba 4 nombres distintos de clave de `localStorage` "por compatibilidad histórica" — señal textual, encontrada directamente en el código, de que el nombre de la clave de sesión cambió varias veces durante el desarrollo sin una limpieza posterior del código legado.
-- (-) El servidor Node.js propio del Switch, reemplazado por Nginx en producción, quedó como código muerto en el repositorio — vestigio de una decisión de despliegue temprana que se abandonó sin eliminar el código asociado.
+## Opciones consideradas
+1. **(SELECCIONADA) Un stack distinto por frontend:** cada sub-equipo usa la herramienta con la que ya tiene experiencia.
+2. **Un solo stack para los dos frontends:** ambos equipos usan la misma tecnología, aunque uno de los dos tenga que aprenderla sobre la marcha.
+
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Un stack distinto por frontend**
+- Seleccionada porque cada frontend consume una API distinta y no comparte componentes visuales con el otro — no había un beneficio real de compartir la misma herramienta.
+- Seleccionada porque cada sub-equipo pudo avanzar en paralelo, sin depender de que el otro terminara de decidir su propio stack.
+- Con esta opción, mantener el sistema a futuro es más difícil: alguien que trabaje en los dos frontends tiene que manejar dos formas distintas de construir pantallas.
+- Quedó código sin usar en el Switch (un servidor propio que después se reemplazó por Nginx), señal de un cambio de plan que no se limpió del todo.
+
+**Opción 2 — Un solo stack para los dos frontends**
+- Rechazada porque hubiera obligado a uno de los dos sub-equipos a dejar la herramienta con la que ya avanzaba rápido, a mitad de un plazo de solo un mes.

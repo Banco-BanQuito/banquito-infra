@@ -1,21 +1,30 @@
-# ADR-013 (Fase 2): TaskScheduler en memoria para lotes diferidos — deuda técnica identificada y aceptada
+# ADR-013 (Fase 2): Aviso — el reloj de lotes diferidos no sobrevive a un reinicio
 
-## Estado
-Aceptado con reserva — deuda técnica conocida, documentada, no resuelta en esta fase
-
-## Contexto
-Los lotes de pago recibidos después de la hora de corte (`cutoff-hour`) no se procesan de inmediato: se marcan como `PROGRAMADO` y deben ejecutarse automáticamente a las 00:01 del día siguiente, sin intervención de un operador.
+**Estado:** Aceptado con reserva — deuda técnica conocida, todavía sin resolver
+**Fecha:** Junio 2026
+**Autor:** Equipo Fase 2
 
 ## Decisión
-El disparo del procesamiento diferido usa un `TaskScheduler` de Spring, en memoria, dentro del propio proceso de `file-reception-service`.
+Los lotes que llegan después de la hora de corte se agendan con un `TaskScheduler` de Spring, guardado solo en memoria, para procesarse a las 00:01 del día siguiente.
 
-## Por qué esto es una decisión débil, y por qué se documenta igual como ADR
-Un `TaskScheduler` en memoria no sobrevive a un reinicio del contenedor: si el proceso se reinicia por un despliegue, un crash, o una actualización de Watchtower en cualquier momento antes de la hora programada, la tarea agendada se pierde **sin dejar ningún rastro**, y el lote queda huérfano indefinidamente en estado `PROGRAMADO`, sin que nadie lo note hasta que un cliente pregunte por qué su pago nunca se procesó. Esto no es una hipótesis: se confirmaron 4 casos reales de lotes huérfanos por esta causa exacta durante el desarrollo de esta fase.
+## Contexto
+Un lote que llega tarde no se procesa de inmediato: se marca como `PROGRAMADO` y debe ejecutarse solo, sin que un operador tenga que hacer nada, al día siguiente.
 
-## Por qué se acepta como decisión "en curso" y no se revierte de inmediato
-Corregirlo correctamente exige uno de tres caminos, cada uno con costo de implementación no trivial dentro del tiempo disponible de esta fase: (1) persistir el lote programado en base de datos con un job de polling periódico que lo recoja, (2) usar Quartz con `JobStore` persistente en vez del `TaskScheduler` en memoria de Spring, o (3) reemplazar la espera en memoria por un mensaje diferido en RabbitMQ con TTL y dead-letter exchange, aprovechando la infraestructura de colas que el sistema ya tiene (ver ADR-004 de esta fase). Ninguna de las tres se implementó todavía.
+## Opciones consideradas
+1. **(SELECCIONADA, con reserva) `TaskScheduler` en memoria:** el aviso para procesar el lote vive solo en la memoria del proceso.
+2. **Guardar el aviso en base de datos + revisor periódico:** un proceso revisa cada cierto tiempo si hay lotes que ya deben procesarse.
+3. **Mensaje diferido en RabbitMQ (con tiempo de espera):** aprovechar el mismo broker de mensajes que ya usa el sistema.
 
-## Consecuencias
-- (+) Documentar esta limitación de forma explícita, con evidencia de los 4 casos reales encontrados, demuestra criterio de ingeniería: identificar y comunicar una deuda técnica conocida es más defendible ante un evaluador que dejarla sin mencionar y que se descubra por otra vía.
-- (-) Todo lote programado para procesarse después de la hora de corte está en riesgo de pérdida silenciosa si el sistema se reinicia antes de esa hora — riesgo real y no hipotético en un entorno donde los despliegues son frecuentes (ver ADR-007 de esta fase, Watchtower).
-- (-) No existe actualmente ninguna alerta ni monitoreo que detecte un lote huérfano en `PROGRAMADO` más allá de su hora esperada — el problema se descubre reactivamente, no proactivamente.
+## Compensaciones
+
+**Opción 1 (SELECCIONADA, con reserva) — `TaskScheduler` en memoria**
+- Fue la más rápida de implementar con las herramientas que Spring ya trae.
+- **Riesgo real, no hipotético:** si el proceso se reinicia antes de la hora programada (por un despliegue nuevo, una caída, o una actualización automática), el aviso se pierde sin dejar rastro, y el lote queda esperando para siempre en estado `PROGRAMADO`. Se confirmaron 4 casos reales de esto durante el desarrollo.
+- No hay ninguna alerta que avise cuando esto pasa — el problema se descubre solo si un cliente pregunta por qué su pago nunca llegó.
+- Se deja documentado a propósito, sin resolver todavía, porque avisar de una deuda técnica conocida es mejor que dejar que la descubran por otro lado.
+
+**Opción 2 — Guardar en base de datos + revisor periódico**
+- No se implementó en esta fase por el tiempo disponible — es el arreglo más simple de los tres pendientes.
+
+**Opción 3 — Mensaje diferido en RabbitMQ**
+- No se implementó en esta fase, aunque aprovecharía la infraestructura de colas que el sistema ya tiene (ver ADR-004 de esta fase).

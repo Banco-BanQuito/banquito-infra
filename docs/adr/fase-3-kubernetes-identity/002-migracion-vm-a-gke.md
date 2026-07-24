@@ -1,26 +1,32 @@
-# ADR-002 (Fase 3): Migración de despliegue — VM + Docker Compose + Watchtower → Google Kubernetes Engine
+# ADR-002 (Fase 3): Migración de Docker Compose a Kubernetes (GKE)
 
-## Estado
-En progreso — supersede a ADR-007 de Fase 2
-
-## Contexto
-El proyecto final exige explícitamente un orquestador de contenedores real, provisto por la nube — Docker Compose sobre una única VM, aunque funcional para las fases anteriores, no cumple ese requisito por definición: no hay orquestación real (rescheduling automático ante fallo de nodo, escalado horizontal declarativo, rolling updates nativos).
+**Estado:** En progreso — reemplaza al ADR-007 de Fase 2
+**Fecha:** Julio 2026
+**Autor:** Equipo Fase 3
 
 ## Decisión
-Migración a GKE (Google Kubernetes Engine), con el pipeline de GitHub Actions de cada repositorio desplegando vía `kubectl set image` sobre el clúster, autenticado mediante Workload Identity Federation — sin llaves de cuenta de servicio en texto plano almacenadas como secreto de GitHub.
+El sistema se despliega en GKE (Kubernetes de Google Cloud). Cada repositorio actualiza su servicio con `kubectl set image` desde GitHub Actions, autenticado con Workload Identity Federation, sin llaves guardadas como secreto.
 
-## Por qué GKE y no Docker Swarm
-Docker Swarm es más simple de operar que Kubernetes, pero tiene adopción decreciente en la industria y un ecosistema de herramientas (observabilidad, gestión de secretos, políticas de red) sustancialmente más limitado. Kubernetes es el estándar de facto tanto de la industria como del propio curso, y GKE en particular ofrece integración nativa con el resto del stack de GCP ya en uso (Cloud SQL, Secret Manager, Identity Platform), reduciendo el número de puntos de integración manual entre proveedores.
+## Contexto
+El proyecto final pide un orquestador de contenedores real, provisto por la nube. Docker Compose sobre una sola VM funcionó bien en fases anteriores, pero no es un orquestador real: no reinicia servicios solo si falla un nodo, no escala automáticamente, no actualiza sin cortar el servicio.
 
-## Por qué Workload Identity Federation y no una llave de cuenta de servicio descargada
-Una llave de cuenta de servicio en formato JSON, almacenada como secreto de GitHub, es una credencial de larga duración que, si se filtra, otorga acceso hasta que alguien la revoque manualmente. Workload Identity Federation permite que GitHub Actions se autentique directamente contra GCP usando la identidad propia del workflow (un token de corta duración emitido por GitHub, intercambiado por credenciales temporales de GCP), sin que exista ningún archivo de credencial persistente que pueda filtrarse.
+## Opciones consideradas
+1. **(SELECCIONADA) Google Kubernetes Engine (GKE):** Kubernetes administrado por Google.
+2. **Docker Swarm:** un orquestador más simple que Kubernetes.
+3. **Seguir con Docker Compose + Watchtower.**
 
-## Lección real aprendida durante la transición, no anticipada en el diseño original
-Mientras el sistema corría sobre Docker Compose con Watchtower, un merge a `main` disparaba un `docker compose down` seguido de `up` **completo e inmediato**, sin posibilidad real de cancelarlo a mitad de camino una vez iniciado — se comprobó en producción que intentar cancelar la ejecución de GitHub Actions después de que el script ya había empezado a correr no detiene el `docker compose down` ya en curso, dejando el sistema completo caído hasta que se restaura manualmente. GKE con `kubectl set image` reemplaza ese riesgo por una actualización rolling (los pods viejos se retiran gradualmente a medida que los nuevos pasan su *health check*), pero introdujo una clase de problema distinta: los `--build-arg` necesarios para que cada frontend reciba sus variables de entorno reales en tiempo de build no se estaban propagando en el pipeline de GKE — ningún frontend apuntaba a las URLs correctas hasta que se corrigió explícitamente.
+## Compensaciones
 
-## Consecuencias
-- (+) Actualizaciones rolling reales, sin la ventana de caída completa que Watchtower + Docker Compose sí tenía.
-- (+) Sin credenciales de larga duración expuestas en ningún repositorio, gracias a Workload Identity Federation.
-- (+) Integración nativa con el resto de servicios GCP del proyecto (Cloud SQL, Secret Manager, Identity Platform) usando el mismo modelo de identidad de carga de trabajo.
-- (-) Migración todavía en progreso al momento de este documento: no todos los servicios están desplegados en GKE, y el pipeline de build-args para los frontends requirió una corrección posterior a la migración inicial para funcionar correctamente.
-- (-) Los secretos que antes se leían como variable de entorno simple en el `.service` de systemd (Fase 1) o en el `.env` de Docker Compose (Fase 2) ahora requieren, para hacerlo correctamente y no solo copiar el valor a mano, configurar el Secrets Store CSI Driver de GKE con Workload Identity — mecanismo correcto pero con una curva de configuración inicial mayor que las fases anteriores.
+**Opción 1 (SELECCIONADA) — GKE**
+- Seleccionada porque Kubernetes es el estándar de la industria y del curso, y GKE conecta de forma nativa con el resto de servicios de Google Cloud que ya usa el proyecto (Cloud SQL, Secret Manager, Identity Platform).
+- Se usa Workload Identity Federation en vez de una llave de cuenta de servicio guardada como secreto — así no hay ninguna credencial de larga duración que se pueda filtrar.
+- Con esta opción, las actualizaciones ya no cortan el servicio de golpe: los contenedores viejos se retiran poco a poco mientras los nuevos pasan su revisión de salud.
+- Lección real encontrada en el camino: mientras el sistema corría con Docker Compose + Watchtower, un cambio a la rama principal apagaba y volvía a levantar todo el sistema de inmediato, sin poder cancelarlo a mitad de camino una vez empezado — esto ya no pasa en GKE.
+- Migración todavía en curso: no todos los servicios están en GKE todavía, y al pasar los frontends hubo que corregir que no estaban recibiendo sus variables de entorno reales en el momento de construir la imagen.
+- Los secretos que antes se leían como variable de entorno simple ahora necesitan, para hacerse bien (sin copiar el valor a mano en ningún lado), configurar el mecanismo de Kubernetes que los trae directo de Secret Manager (ver ADR-004 de esta fase) — más trabajo de configuración inicial que en fases anteriores, pero más correcto.
+
+**Opción 2 — Docker Swarm**
+- Rechazada porque, aunque es más simple de operar, tiene mucho menos uso en la industria y menos herramientas disponibles (observabilidad, manejo de secretos, políticas de red) comparado con Kubernetes.
+
+**Opción 3 — Seguir con Docker Compose + Watchtower**
+- Rechazada porque no cumple el requisito explícito de esta fase de tener un orquestador de contenedores real.

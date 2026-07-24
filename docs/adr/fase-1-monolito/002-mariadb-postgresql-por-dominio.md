@@ -1,26 +1,29 @@
-# ADR-002 (Fase 1): Motores de base de datos distintos por dominio — MariaDB (Core) y PostgreSQL (Switch)
+# ADR-002 (Fase 1): Motores de base de datos distintos por dominio
 
-## Estado
-Aceptado (histórico — evoluciona a persistencia poliglota completa en ADR-002 de Fase 2)
-
-## Contexto
-El ejercicio exige demostrar que Core y Switch son sistemas **realmente independientes**, no solo separados por convención de paquetes. Compartir una sola base de datos entre ambos, aunque fuera con esquemas distintos, dejaría abierta la posibilidad técnica de que un desarrollador hiciera un JOIN cruzado o una consulta directa a las tablas del otro dominio, rompiendo el aislamiento en la práctica aunque el diagrama dijera lo contrario.
+**Estado:** Aceptado (histórico)
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-MariaDB para `banquito_core` (Core Bancario), PostgreSQL para `switch_pagos` (Switch de Pagos) — instancias y motores completamente distintos, sin esquema ni conexión compartida entre ambos backends.
+MariaDB para el Core (`banquito_core`) y PostgreSQL para el Switch (`switch_pagos`) — dos motores distintos, sin compartir base de datos ni conexión entre los dos procesos.
 
-| Aspecto | Core (MariaDB) | Switch (PostgreSQL) |
-|---|---|---|
-| Motor | MariaDB 10.x | PostgreSQL |
-| Base de datos | `banquito_core` | `switch_pagos` |
-| Acceso | Exclusivo del proceso `banquito-core` | Exclusivo del proceso `switch-pagos` |
-| Estrategia de locking | Pesimista ordenado (ver ADR-008 de Fase 1) | Optimista (reintento en conflicto) |
+## Contexto
+El ejercicio pedía demostrar que Core y Switch son sistemas realmente separados, no solo separados por carpetas de código. Si ambos usaran la misma base de datos, aunque fuera con esquemas distintos, alguien podría (por accidente o por atajo) hacer una consulta cruzada entre las tablas de un dominio y del otro.
 
-## Por qué motores distintos y no el mismo motor con dos bases lógicas
-Usar el mismo motor de base de datos para ambos (por ejemplo, dos bases MariaDB) hubiera sido operativamente más simple, pero **no hace explícita la independencia tecnológica** que el ejercicio busca demostrar. Elegir motores distintos vuelve técnicamente imposible cualquier atajo de integración por base de datos compartida — un desarrollador no puede, ni por accidente, hacer una consulta cruzada entre `banquito_core` y `switch_pagos`, porque ni siquiera hablan el mismo protocolo de red. Esto fuerza a que toda comunicación entre los dos sistemas pase por API (ver ADR-003 de Fase 1), que es exactamente el contrato que se quiere validar.
+## Opciones consideradas
+1. **(SELECCIONADA) Motores distintos:** MariaDB para el Core, PostgreSQL para el Switch.
+2. **Mismo motor, dos bases lógicas:** por ejemplo, dos bases MariaDB separadas, una para cada dominio.
+3. **Una sola base de datos compartida:** un único motor y una sola base, con tablas de ambos dominios.
 
-## Consecuencias
-- (+) Aislamiento de datos verificable a nivel de infraestructura, no solo de convención de código.
-- (+) Sienta la base de "database per service" que la Fase 2 generaliza a los 8 microservicios resultantes.
-- (-) Sin transacciones distribuidas entre Core y Switch — cualquier operación que toque ambos dominios necesita un mecanismo de consistencia eventual (mitigado con idempotencia manual por `transactionUuid`, generalizado formalmente en ADR-010 de Fase 2).
-- (-) No se encontró en el código ninguna característica específica de PostgreSQL (JSONB, `LISTEN/NOTIFY`) ni de MariaDB (replicación) que se aproveche realmente — la elección de motores fue una decisión de aislamiento arquitectónico, no de capacidades técnicas particulares de cada uno.
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Motores distintos**
+- Seleccionada porque hace imposible, no solo prohibido, cualquier consulta cruzada entre Core y Switch — ni siquiera hablan el mismo protocolo de red. Esto obliga a que toda comunicación entre los dos pase por API.
+- Con esta opción no hay transacciones que abarquen ambas bases a la vez — cualquier operación que toque los dos dominios necesita otro mecanismo para mantenerse consistente.
+- No se usó ninguna función específica de PostgreSQL o MariaDB que justificara la elección por capacidades técnicas — fue principalmente para forzar el aislamiento.
+
+**Opción 2 — Mismo motor, dos bases lógicas**
+- Rechazada porque, aunque separa los datos, sigue siendo técnicamente posible conectar ambas bases desde el mismo motor y hacer una consulta cruzada por accidente.
+
+**Opción 3 — Una sola base de datos compartida**
+- Rechazada porque no demuestra ninguna separación real entre los dos sistemas — cualquier desarrollador podría unir tablas de Core y Switch en una sola consulta.

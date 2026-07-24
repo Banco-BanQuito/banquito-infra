@@ -1,20 +1,29 @@
-# ADR-004 (Fase 1): Autenticación propia con contraseña hasheada, sin emisión de token
+# ADR-004 (Fase 1): Autenticación propia con contraseña hasheada, sin token
 
-## Estado
-Aceptado (histórico — reemplazado por ADR-001 de Fase 3, Identity Platform)
-
-## Contexto
-El primer parcial necesitaba login para dos audiencias distintas: operadores de agencia (intranet del Core) y clientes empresariales (portal web y canal SFTP del Switch), sin que el enunciado de esta fase exigiera todavía un esquema de autorización basado en tokens.
+**Estado:** Aceptado (histórico)
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-El login valida usuario/contraseña contra las tablas `CORE_USER` (operadores) y `WEB_CREDENTIAL` (clientes), usando `PasswordEncoderFactories.createDelegatingPasswordEncoder()` (BCrypt) para el hash de contraseñas, y devuelve un DTO plano con los datos del usuario autenticado — sin emitir JWT, sin `SecurityFilterChain`, sin `spring-boot-starter-security` en el classpath (solo el módulo de hashing, `spring-security-crypto`).
+El login revisa usuario y contraseña contra las tablas `CORE_USER` (operadores) y `WEB_CREDENTIAL` (clientes), con la contraseña protegida con BCrypt, y devuelve los datos del usuario sin ningún token.
 
-## Por qué no se implementó un esquema de autorización basado en token
-El primer parcial evaluaba explícitamente la capacidad de construir el flujo de negocio (apertura de cuentas, transferencias, procesamiento de lotes) end-to-end contra bases de datos reales en una VM de producción — la autorización de API (quién puede llamar a qué endpoint) no era un criterio de evaluación de esta fase, a diferencia de fases posteriores donde el API Manager y OAuth2 sí se vuelven requisitos explícitos (ver ADR-001 y ADR-002 de Fase 3).
+## Contexto
+Se necesitaba login para dos tipos de usuario: operadores de agencia (intranet del Core) y clientes empresariales (portal web y SFTP del Switch). El enunciado de esta fase no pedía todavía un esquema de autorización con tokens — el foco era que el flujo de negocio funcionara de punta a punta.
 
-## Consecuencias
-- (+) El hash de contraseñas es correcto y estándar (BCrypt vía `PasswordEncoderFactories`) — la decisión débil está en la capa de autorización de API, no en el almacenamiento de credenciales.
-- (+) El servidor SFTP reutiliza inteligentemente las credenciales web del cliente jurídico (`WebCredential`) en vez de modelar un sistema de credenciales paralelo — decisión pragmática que evita duplicar lógica de autenticación para un canal adicional.
-- (-) Cualquier endpoint del Core es alcanzable sin autenticación real a nivel de servidor — la restricción de acceso depende de que el frontend no llame rutas indebidas, no de que el backend las rechace. El frontend compensa con un header casero `X-Core-User-Id` que el backend nunca valida, lo que confirma que la protección es puramente de interfaz, no de servidor.
-- (-) Sin rate limiting en `/auth/*`, dejando el login potencialmente expuesto a intentos de fuerza bruta.
-- Esta misma brecha (falta de token real) se identificó también en la arquitectura de microservicios antes de integrar Identity Platform, señal de que es un punto ciego recurrente en torno a autenticación distribuida que la Fase 3 corrige de forma definitiva con un proveedor de identidad externo.
+## Opciones consideradas
+1. **(SELECCIONADA) Usuario/contraseña con hash, sin token:** login simple que solo confirma la identidad y devuelve los datos del usuario.
+2. **Usuario/contraseña con JWT:** mismo login, pero emitiendo un token firmado que el backend valida en cada llamada.
+3. **Sesión de servidor con cookie:** el servidor guarda la sesión y la identifica por una cookie.
+
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Usuario/contraseña sin token**
+- Seleccionada porque el objetivo de esta fase era demostrar el flujo de negocio completo, no un esquema de seguridad de API — construir JWT o sesiones hubiera consumido tiempo sin ser parte de lo evaluado en este parcial.
+- Con esta opción, el hash de la contraseña sí queda bien hecho (BCrypt), pero ningún endpoint del backend valida quién está llamando — la única protección es que el frontend no llame rutas indebidas, no que el servidor las rechace.
+- Con esta opción no hay límite de intentos de login, dejando la puerta abierta a ataques de fuerza bruta.
+
+**Opción 2 — Usuario/contraseña con JWT**
+- Rechazada por tiempo: implementar emisión y validación de token en cada endpoint no era parte de lo que pedía el enunciado de esta fase.
+
+**Opción 3 — Sesión de servidor con cookie**
+- Rechazada porque el Core y el Switch son procesos separados (ver ADR-001), y compartir sesión entre dos procesos distintos hubiera exigido un almacén de sesiones común, complejidad no justificada en esta fase.

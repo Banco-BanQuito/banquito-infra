@@ -1,23 +1,27 @@
-# ADR-015 (Fase 1): Otras decisiones técnicas menores, con evidencia directa del código
+# ADR-015 (Fase 1): Otras decisiones técnicas pequeñas
 
-## Estado
-Aceptado (histórico)
+**Estado:** Aceptado (histórico)
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
+
+## Decisión
+Este ADR no es una sola decisión — junta varios hallazgos pequeños del código, cada uno muy chico para tener su propio ADR, pero útiles en conjunto para mostrar que el análisis de esta fase se hizo sobre el código real.
 
 ## Contexto
-Decisiones puntuales, cada una demasiado pequeña para un ADR propio, pero relevantes en conjunto para entender el nivel de rigor técnico del primer parcial y para poder defender ante el evaluador que el análisis de esta fase fue sobre el código real, no sobre suposiciones.
+Al revisar el código de los 4 repositorios de esta fase, aparecieron varios detalles que vale la pena dejar anotados.
 
-## Decisiones y su sustento
+## Compensaciones
 
-**Lombok en el Core (54 archivos), completamente ausente en el Switch.** El Switch escribe a mano cada getter, setter, `equals`, `hashCode` y `toString` — un archivo como `ServiceFeeRule.java` tiene 145 líneas para solo 8 campos. Esto no es un accidente de un solo archivo: es consistente en todo el módulo del Switch, lo que confirma que fue una decisión (o ausencia de decisión) de todo ese sub-equipo, no un descuido puntual.
+**Lombok en el Core, nada de Lombok en el Switch.** El Core usa la librería Lombok para no escribir a mano los getters y setters; el Switch los escribe todos a mano, en los mismos archivos. Es consistente en todo el módulo del Switch, así que fue una elección de ese sub-equipo, no un descuido en un solo archivo.
 
-**DTOs siempre, nunca entidades JPA expuestas directamente en las respuestas.** Práctica mantenida sin excepciones en los ~15 controllers de ambos backends — evita el problema clásico de serialización infinita por relaciones bidireccionales JPA, y evita filtrar campos internos del modelo de persistencia hacia el consumidor de la API.
+**Nunca se exponen las entidades de base de datos directamente en las respuestas.** Los dos backends siempre devuelven un DTO (un objeto pensado para la respuesta), nunca la entidad de la base de datos tal cual. Esto evita errores de serialización y evita mostrar campos internos que no le importan al cliente.
 
-**Versionado de API fijo en el path** (`/core/v1/`, `/switch/v1/`), sin negociación de contenido por header. Es el patrón más simple y predecible de versionado REST, adecuado para un sistema con un único consumidor conocido por endpoint (no una API pública con múltiples versiones activas simultáneamente).
+**La versión de la API va fija en la URL** (`/core/v1/`, `/switch/v1/`), no en un encabezado. Es la forma más simple de versionar una API, suficiente para un sistema con un solo consumidor por endpoint.
 
-**CORS con dos configuraciones de rigor distinto.** El Core permite cualquier origen (`allowedOriginPatterns("*")`); el Switch restringe a una whitelist explícita de orígenes conocidos. El Switch, al manejar pagos masivos (mayor sensibilidad de negocio) y al ser la reescritura más tardía del proyecto (`Switch_V2`), recibió el endurecimiento que el Core nunca llegó a aplicar retroactivamente.
+**El Core deja entrar peticiones de cualquier origen (CORS abierto); el Switch solo acepta una lista fija de orígenes conocidos.** El Switch, al manejar pagos masivos, quedó más restringido — probablemente porque se reescribió más tarde que el Core y ahí sí se pensó en este detalle.
 
-**Variables de entorno con valor por defecto embebido** (`${VARIABLE:valor_por_defecto}`) en el propio `application.properties`, en vez de archivos de perfil Spring separados. Permite mover el mismo artefacto compilado entre la laptop de un desarrollador y la VM de producción sin mantener dos archivos de configuración sincronizados manualmente.
+**Las variables de entorno tienen un valor por defecto escrito en el mismo archivo de configuración**, en vez de tener un archivo distinto para desarrollo y otro para producción. Esto permite mover el mismo programa compilado entre la laptop de un desarrollador y la VM sin mantener dos archivos sincronizados a mano.
 
-**Sin rate limiting en ningún endpoint**, incluyendo `/auth/*` — consecuencia directa de la ausencia de una capa de autorización de API completa (ver ADR-004 de Fase 1): si no hay control de acceso a nivel de servidor, tampoco se priorizó un control de frecuencia de peticiones.
+**No hay límite de peticiones por segundo en ningún endpoint**, ni siquiera en el login — consecuencia directa de que tampoco hay control de quién puede llamar a cada endpoint (ver ADR-004).
 
-**Código vestigial real, encontrado por lectura directa del código:** `FileValidationService.validateBatch()` construye un registro de auditoría marcado como éxito de forma incondicional, sin volver a ejecutar ninguna validación — la lógica de validación real ya se había movido antes a `validateEarlyRejection()`, y este método quedó como un registro "siempre verde" tras un refactor que no se completó del todo. Es un ejemplo concreto y citable de deuda técnica real, útil para demostrar ante el evaluador que la revisión de esta fase fue exhaustiva y no superficial.
+**Se encontró código que ya no hace nada real.** Un método de validación de archivos siempre marca el resultado como exitoso, sin volver a revisar nada — la validación real ya se había movido a otro lugar del código antes, y este método quedó "pegado" sin actualizarse. Es un ejemplo concreto de una parte del código que quedó a medias tras un cambio anterior.

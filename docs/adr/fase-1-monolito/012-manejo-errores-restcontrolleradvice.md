@@ -1,19 +1,26 @@
-# ADR-012 (Fase 1): Manejo de errores centralizado con `@RestControllerAdvice`
+# ADR-012 (Fase 1): Manejo de errores centralizado por servicio
 
-## Estado
-Aceptado — el patrón se mantiene vigente en Fase 2, con mayor rigor
-
-## Contexto
-Ambos backends necesitan traducir excepciones de negocio (cuenta no encontrada, saldo insuficiente, transacción duplicada) a respuestas HTTP consistentes y comprensibles para el frontend, sin repetir bloques try/catch en cada controller.
+**Estado:** Aceptado — sigue vigente en Fase 2
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-`@RestControllerAdvice` (`GlobalExceptionHandler`) en ambos backends, con una jerarquía de excepciones de negocio custom mapeadas a códigos HTTP específicos. El Core mapea 8 tipos de excepción distintos; el Switch, menos tipos específicos pero con un catch-all genérico que expone `e.getMessage()` directamente en la respuesta al cliente.
+Cada backend tiene un solo lugar (`GlobalExceptionHandler`, con `@RestControllerAdvice`) que convierte cada tipo de error de negocio en un código HTTP, en vez de repetir ese manejo en cada controlador.
 
-## Por qué `@RestControllerAdvice` y no manejo local por controller
-Centralizar el manejo de errores en un único punto por servicio evita que la traducción de "excepción de negocio → código HTTP" se repita y potencialmente se vuelva inconsistente entre distintos controllers del mismo backend. Es el patrón estándar de Spring para este problema y no exige librerías adicionales.
+## Contexto
+Ambos backends necesitan convertir errores de negocio (cuenta no encontrada, saldo insuficiente, transacción duplicada) en respuestas HTTP claras para el frontend, sin repetir el mismo bloque de código en cada endpoint.
 
-## Consecuencias
-- (+) Respuestas de error consistentes dentro de cada backend, con códigos HTTP semánticamente razonables para la mayoría de los casos (404 para no encontrado, 409 para conflicto, 401/403 para autenticación/autorización).
-- (-) El Core no tiene catch-all genérico: una excepción no prevista explota como 500 sin ningún control ni mensaje amigable — el desarrollador debe anticipar explícitamente cada tipo de error posible.
-- (-) El catch-all del Switch, aunque cubre el caso no anticipado, expone `e.getMessage()` sin filtrar directamente al cliente — riesgo de fuga de detalles internos (nombres de clase, mensajes de excepciones de librería) que en un entorno de producción real debería sanearse antes de responder al cliente.
-- (-) Ninguno de los dos backends usa `ProblemDetail` (RFC 7807), disponible nativamente desde Spring 6 — las respuestas de error son `Map` construidos a mano, sin una estructura estandarizada entre servicios.
+## Opciones consideradas
+1. **(SELECCIONADA) Manejo centralizado con `@RestControllerAdvice`:** un solo archivo por backend traduce cada tipo de error a su código HTTP.
+2. **Manejo local en cada controlador:** cada endpoint captura sus propios errores con `try/catch`.
+
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Manejo centralizado**
+- Seleccionada porque evita repetir la misma traducción de "error de negocio → código HTTP" en cada endpoint, y evita que dos controladores respondan distinto ante el mismo tipo de error.
+- Es el patrón que Spring ya trae listo para este problema, sin necesitar ninguna librería extra.
+- En el Core, un error que no se anticipó explota como código 500 sin ningún mensaje amigable — falta un manejo genérico de respaldo.
+- En el Switch sí hay un manejo genérico de respaldo, pero muestra el mensaje interno del error directo al usuario — un riesgo si ese mensaje revela detalles internos del sistema.
+
+**Opción 2 — Manejo local en cada controlador**
+- Rechazada porque hubiera repetido el mismo código de manejo de errores una y otra vez, con más riesgo de que quedara inconsistente entre endpoints.

@@ -16,7 +16,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | [010](010-idempotencia-transacciones.md) | Idempotencia de operaciones financieras vía UUID de transacción |
 | [011](011-eliminacion-routing-service.md) | Eliminación de routing-service, el Exchange de RabbitMQ hace el ruteo |
 | [012](012-redes-docker-separadas.md) | Redes Docker separadas entre Core y Switch |
-| [013](013-scheduler-lotes-diferidos-deuda-tecnica.md) | TaskScheduler en memoria para lotes diferidos — deuda técnica identificada |
-| [014](014-cobertura-pruebas-70-porciento.md) | Cobertura de pruebas unitarias mínima del 70%, limitada a Controllers y Services |
+| [013](013-scheduler-lotes-diferidos-deuda-tecnica.md) | Aviso — el reloj de lotes diferidos no sobrevive a un reinicio |
+| [014](014-cobertura-pruebas-70-porciento.md) | Pruebas unitarias con 70% de cobertura, solo en Controllers y Services |
 
 > **Nota de revisión:** el ADR-006 (particionamiento) documenta la partición por `transaction_date`. Verificación en vivo contra la base de datos real (con `EXPLAIN`) durante el desarrollo de Fase 3 confirmó que la columna que efectivamente produce partition pruning es `accounting_date` — son dos columnas distintas del mismo modelo. Pendiente de confirmar con el autor original si esto es un error de documentación o si el esquema cambió después de escrito el ADR.

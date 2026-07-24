@@ -1,22 +1,29 @@
-# ADR-009 (Fase 1): Procesamiento de lote línea por línea (partial success), asíncrono con `@Async`
+# ADR-009 (Fase 1): Procesamiento del lote línea por línea, en segundo plano
 
-## Estado
-Aceptado (histórico — el mecanismo `@Async` casero se reemplaza por RabbitMQ en Fase 2, ver ADR-004 de Fase 2)
-
-## Contexto
-Un lote de nómina puede contener cientos de beneficiarios; si uno solo tiene una cuenta inválida o inactiva, el resto del lote (sueldos de decenas de otros empleados) no debe quedar bloqueado ni revertido.
+**Estado:** Aceptado (histórico)
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-El procesamiento del lote corre en un método `@Async`, devolviendo control inmediato al llamador HTTP. Cada línea se procesa con su propio `try/catch` y estado individual (`REJECTED` no detiene el lote); un scheduler adicional cada 10 minutos detecta y recupera lotes atascados en estado `PROCESSING` por más de 20 minutos. La comisión por transacción es configurable en base de datos por rangos de volumen (`SERVICE_FEE_RULE`); el IVA está hardcodeado al 15% como constante Java. Cada línea exitosa genera doble partida contable real: crédito a una cuenta institucional de ingresos por servicio y otra de IVA por pagar, por montos distintos.
+El lote se procesa en segundo plano con `@Async`, línea por línea: si una línea falla, se marca como rechazada y el resto del lote sigue. La comisión por transacción sale de una tabla configurable; el IVA queda fijo al 15% en el código.
 
-## Por qué procesamiento por línea y no transacción todo-o-nada del lote completo
-Un lote todo-o-nada (rollback completo si una sola línea falla) sería más simple de implementar, pero no refleja cómo opera un switch de pagos real: el beneficiario número 47 con una cuenta cerrada no puede ser motivo para que los otros 299 empleados de la nómina no reciban su sueldo ese mes. El procesamiento por línea, con estado individual persistido, es la decisión que hace que el sistema sea utilizable en un escenario real de nómina masiva.
+## Contexto
+Un lote de nómina puede tener cientos de beneficiarios. Si uno solo tiene una cuenta cerrada o inválida, el resto (los sueldos de los demás empleados) no debe quedar bloqueado ni revertido.
 
-## Por qué IVA fijo pero comisión configurable
-La comisión por transacción se sabía variable por requerimiento explícito del parcial (debía escalar según el volumen de transacciones exitosas del lote), así que se modeló desde el inicio como datos en tabla (`SERVICE_FEE_RULE`). El IVA, en cambio, es una tasa fijada por ley tributaria ecuatoriana, no una variable de negocio del banco — se trató como una constante porque, a diferencia de la comisión, no había ningún escenario de prueba que exigiera cambiarla en tiempo de ejecución.
+## Opciones consideradas
+1. **(SELECCIONADA) Procesamiento por línea, en segundo plano:** cada línea se procesa por separado; una línea con error no afecta a las demás.
+2. **Transacción todo-o-nada:** si una sola línea falla, se revierte el lote completo.
+3. **IVA configurable en tabla, igual que la comisión.**
 
-## Consecuencias
-- (+) Un archivo de nómina con errores puntuales no bloquea el pago de la mayoría de beneficiarios válidos — comportamiento correcto y esperado en un sistema de pagos real.
-- (+) El scheduler de recuperación de lotes atascados demuestra que el equipo anticipó fallos a mitad de un procesamiento asíncrono, no solo el camino feliz.
-- (+) La contabilización de doble partida (ingreso por servicio + IVA por pagar en cuentas institucionales separadas) es correcta desde el punto de vista contable, no una simplificación.
-- (-) `@Async` de Spring no persiste su cola de tareas: si el proceso se reinicia a mitad de un lote, el estado queda en lo último persistido en base de datos, sin garantía de reanudación automática del resto del archivo — limitación que RabbitMQ, con sus colas durables, resuelve en la Fase 2.
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Procesamiento por línea**
+- Seleccionada porque así funciona un switch de pagos real: el beneficiario 47 con una cuenta cerrada no puede ser motivo para que los otros 299 empleados no reciban su sueldo ese mes.
+- Se agregó además un revisor que corre cada 10 minutos y recupera lotes que quedaron atascados — pensado para el caso en que el proceso se caiga a mitad de un lote.
+- Con esta opción, si el proceso se reinicia a mitad de un lote, el trabajo en segundo plano (`@Async`) no se guarda en ningún lado — el sistema no sabe automáticamente que debe seguir donde se quedó. Esto lo resuelve RabbitMQ en la Fase 2, con colas que sí sobreviven a un reinicio.
+
+**Opción 2 — Transacción todo-o-nada**
+- Rechazada porque un solo beneficiario con error tumbaría el pago de todos los demás — comportamiento que no tiene sentido para un sistema de nómina real.
+
+**Opción 3 — IVA configurable en tabla**
+- Rechazada porque el IVA es una tasa fija por ley, a diferencia de la comisión, que sí cambia según el volumen del lote (requisito explícito de esta fase). No había ningún caso de prueba que necesitara cambiar el IVA en tiempo real.

@@ -1,18 +1,25 @@
 # ADR-012 (Fase 2): Redes Docker separadas entre Core y Switch
 
-## Estado
-Aceptado
-
-## Contexto
-El ADR-001 de esta fase declara Core y Switch como dos Bounded Contexts independientes, pero esa separación, si solo vive en la organización de los repositorios y del `docker-compose.yml`, no es verificable en tiempo de ejecución — cualquier contenedor en la misma red Docker por defecto puede alcanzar a cualquier otro, sin importar a qué dominio pertenezca "en el papel".
+**Estado:** Aceptado
+**Fecha:** Junio 2026
+**Autor:** Equipo Fase 2
 
 ## Decisión
-Se declaran dos redes Docker explícitas — `banquito-core-net` y `banquito-switch-net` — además de una red de observabilidad separada. `party-service` y `teller-frontend` se conectan únicamente a la red del Core; `clearinghouse-service` y `tariff-service` únicamente a la del Switch. `account-core-service` es el **único** servicio conectado a ambas redes, actuando como el único puente legítimo entre los dos dominios.
+Se crean dos redes de Docker — una para el Core y otra para el Switch. Cada servicio se conecta solo a la red de su dominio, menos `account-core-service`, que se conecta a las dos porque es el único puente permitido entre ambos.
 
-## Por qué segmentar la red y no confiar solo en la separación de código
-La separación de Bounded Contexts a nivel de código (paquetes, repositorios, contratos de API) no impide que, por error o por atajo bajo presión de tiempo, un desarrollador haga que un servicio del Switch llame directamente a la base de datos o a un puerto interno de un servicio del Core sin pasar por su API pública. Segmentar la red Docker convierte esa regla de "no debes" en una restricción técnica real: un contenedor que no está en la red del Core **no puede** alcanzarlo por red, sin importar qué diga el código que intenta escribirse.
+## Contexto
+El ADR-001 de esta fase dice que Core y Switch son dos dominios separados, pero esa separación, si solo vive en cómo está organizado el código, no impide que un contenedor le hable directamente a otro por red, sin pasar por su API.
 
-## Consecuencias
-- (+) La separación entre Core y Switch es verificable con una herramienta externa al código (`docker network inspect`), no solo argumentable en un diagrama.
-- (+) Cualquier necesidad futura de comunicación directa entre dominios exige una decisión consciente y visible (agregar un servicio a ambas redes, como ya ocurre con `account-core-service`), no un atajo silencioso.
-- (-) Depurar problemas de conectividad exige tener en cuenta explícitamente a qué red pertenece cada contenedor — un error de "connection refused" puede deberse a segmentación de red intencional, no a que el servicio destino esté caído.
+## Opciones consideradas
+1. **(SELECCIONADA) Dos redes Docker separadas:** cada dominio tiene su propia red; solo un servicio puente conecta a las dos.
+2. **Una sola red compartida para todos los contenedores.**
+
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Dos redes separadas**
+- Seleccionada porque convierte la separación de "no debes llamar directo a otro dominio" en algo que la red misma impide, no solo una regla que alguien podría saltarse bajo presión de tiempo.
+- Con esta opción, la separación se puede comprobar con una herramienta (`docker network inspect`), no solo mostrarse en un diagrama.
+- Con esta opción, depurar un problema de conexión exige saber en qué red está cada contenedor — un error de conexión puede ser justamente por esta separación, no porque el servicio esté caído.
+
+**Opción 2 — Una sola red compartida**
+- Rechazada porque cualquier contenedor podría alcanzar a cualquier otro sin restricción, sin importar a qué dominio pertenece "en el papel" — no demuestra ninguna separación real.

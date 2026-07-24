@@ -1,22 +1,29 @@
-# ADR-008 (Fase 1): Locking pesimista con bloqueo ordenado alfabéticamente para transferencias
+# ADR-008 (Fase 1): Bloqueo pesimista ordenado para transferencias
 
-## Estado
-Aceptado — se mantiene vigente en Fase 2 y Fase 3 sin cambios
-
-## Contexto
-Dos transferencias cruzadas simultáneas (cliente A transfiere a B en el mismo instante en que B transfiere a A) pueden producir un interbloqueo (deadlock) si cada transacción de base de datos bloquea las cuentas involucradas en un orden distinto — una espera el lock que tiene la otra, y viceversa.
+**Estado:** Aceptado — sigue vigente en Fase 2 y Fase 3
+**Fecha:** Mayo 2026
+**Autor:** Equipo Fase 1
 
 ## Decisión
-Todo movimiento de saldo en el Core usa `SELECT ... FOR UPDATE` (locking pesimista, vía `findWithLockByAccountNumber` + `@Lock(LockModeType.PESSIMISTIC_WRITE)` de Spring Data), y en operaciones que afectan dos cuentas (transferencias), ambas cuentas se bloquean siempre en **orden alfabético por número de cuenta**, sin importar el sentido real de la transferencia.
+Toda operación que mueve saldo bloquea la fila de la cuenta con `SELECT ... FOR UPDATE`, y en las transferencias (que tocan dos cuentas), siempre se bloquean en orden alfabético por número de cuenta, sin importar el sentido de la transferencia.
 
-## Por qué pesimista y no optimista para el saldo
-El locking optimista (verificar una versión al guardar y reintentar si cambió) es adecuado cuando los conflictos son poco frecuentes y el costo de un reintento es bajo — es lo que efectivamente se usa para el estado del lote en el Switch (ver más abajo). Para el saldo de una cuenta bancaria, un conflicto no detectado a tiempo significa dinero mal calculado, no un simple reintento de UI: el costo de un error es demasiado alto para aceptar la ventana de riesgo que el locking optimista tolera. El locking pesimista bloquea la fila desde el inicio de la transacción, garantizando que ninguna otra operación pueda leer o escribir el mismo saldo hasta que la primera termine.
+## Contexto
+Dos transferencias cruzadas al mismo tiempo (A le transfiere a B, mientras B le transfiere a A) pueden trabarse entre sí (deadlock) si cada una bloquea las cuentas en un orden distinto — una espera lo que tiene bloqueada la otra, y viceversa.
 
-## Por qué bloquear en orden alfabético y no en el orden en que llega la transferencia
-Si cada transacción bloqueara primero la cuenta origen y luego la destino (el orden "natural" de una transferencia), dos transferencias cruzadas (A→B y B→A) bloquearían en órdenes opuestos, generando un deadlock real que la base de datos eventualmente resuelve abortando una de las dos transacciones — con el correspondiente reintento y latencia adicional. Ordenar el bloqueo alfabéticamente por número de cuenta, independientemente del sentido de la transferencia, garantiza que **todas** las transacciones concurrentes bloqueen las cuentas compartidas en el mismo orden, eliminando la posibilidad de deadlock por diseño, no por manejo de excepciones.
+## Opciones consideradas
+1. **(SELECCIONADA) Bloqueo pesimista con orden fijo:** se bloquean las filas desde el inicio, siempre en el mismo orden (alfabético), sin importar quién transfiere a quién.
+2. **Bloqueo optimista:** se guarda una versión del registro y se reintenta si alguien más lo cambió mientras tanto.
+3. **Sin bloqueo explícito:** confiar en el nivel de aislamiento por defecto de la base de datos.
 
-## Consecuencias
-- (+) Elimina deadlocks entre transferencias cruzadas por construcción, sin necesitar lógica de detección y reintento.
-- (+) Demuestra un nivel de comprensión de concurrencia en sistemas bancarios que va más allá de lo mínimo exigible en un ejercicio académico.
-- (+) Coexiste coherentemente con locking optimista en el Switch para el estado del lote — cada mecanismo se aplicó al dominio donde su trade-off tiene sentido: pesimista donde el costo de un error es alto (dinero), optimista donde los conflictos son raros y el costo de reintentar es bajo (workflow de estado).
-- (-) El locking pesimista reduce el paralelismo posible sobre una misma cuenta: si un cliente tiene múltiples operaciones concurrentes sobre su propia cuenta, se serializan estrictamente, aceptado como trade-off correcto frente al riesgo de saldo incorrecto.
+## Compensaciones
+
+**Opción 1 (SELECCIONADA) — Bloqueo pesimista con orden fijo**
+- Seleccionada porque, para el saldo de una cuenta, un error no detectado a tiempo significa dinero mal calculado — un costo demasiado alto para arriesgar con reintentos.
+- Seleccionada porque bloquear siempre en el mismo orden (alfabético, no según quién transfiere a quién) evita el interbloqueo por diseño, sin necesitar lógica para detectarlo y reintentar.
+- Con esta opción, dos operaciones sobre la misma cuenta al mismo tiempo se ejecutan una después de la otra, nunca en paralelo — aceptado porque es más seguro que el riesgo de un saldo mal calculado.
+
+**Opción 2 — Bloqueo optimista**
+- Rechazada para el saldo porque el costo de un conflicto no detectado a tiempo (dinero mal calculado) es demasiado alto comparado con el ahorro de rendimiento. Sí se usa, en cambio, para el estado del lote en el Switch, donde un conflicto es raro y reintentar sale barato.
+
+**Opción 3 — Sin bloqueo explícito**
+- Rechazada porque deja el saldo expuesto a condiciones de carrera reales entre operaciones simultáneas sobre la misma cuenta.
