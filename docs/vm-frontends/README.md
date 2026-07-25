@@ -178,18 +178,117 @@ VITE_APIGEE_API_KEY
 
 Estos valores no se escriben en el repositorio. El workflow los lee desde Google Secret Manager.
 
-## Secrets requeridos en GitHub Actions
+## Secretos de despliegue en Google Secret Manager
 
-Cada repositorio frontend necesita estos secrets:
+La informacion de despliegue hacia la VM tambien se guarda en Google Secret Manager, no en archivos del repositorio.
 
 ```text
-VM_HOST=34.63.127.239
-VM_USER=User
-VM_PORT=22
-VM_SSH_KEY=<llave privada autorizada en la VM>
+frontend-vm-host
+frontend-vm-user
+frontend-vm-port
+frontend-vm-ssh-private-key
 ```
 
-Repositorios:
+Valores actuales:
+
+```text
+frontend-vm-host=34.63.127.239
+frontend-vm-user=User
+frontend-vm-port=22
+frontend-vm-ssh-private-key=<llave privada autorizada en la VM>
+```
+
+Comandos utilizados para crear o actualizar estos secretos:
+
+```powershell
+$PROJECT_ID = "project-47695a8e-7cb2-4352-af2"
+$KEY_FILE = "C:\Users\User\Desktop\KUBERNETS-PROYECTO\.deploy-secrets\banquito_frontend_vm_key_github_actions"
+
+"34.63.127.239" | gcloud secrets create frontend-vm-host `
+  --project $PROJECT_ID `
+  --data-file=-
+
+"User" | gcloud secrets create frontend-vm-user `
+  --project $PROJECT_ID `
+  --data-file=-
+
+"22" | gcloud secrets create frontend-vm-port `
+  --project $PROJECT_ID `
+  --data-file=-
+
+gcloud secrets create frontend-vm-ssh-private-key `
+  --project $PROJECT_ID `
+  --data-file=$KEY_FILE
+```
+
+Si el secreto ya existe, se agrega una nueva version:
+
+```powershell
+"34.63.127.239" | gcloud secrets versions add frontend-vm-host `
+  --project $PROJECT_ID `
+  --data-file=-
+
+"User" | gcloud secrets versions add frontend-vm-user `
+  --project $PROJECT_ID `
+  --data-file=-
+
+"22" | gcloud secrets versions add frontend-vm-port `
+  --project $PROJECT_ID `
+  --data-file=-
+
+gcloud secrets versions add frontend-vm-ssh-private-key `
+  --project $PROJECT_ID `
+  --data-file=$KEY_FILE
+```
+
+Permisos otorgados a la cuenta de servicio usada por GitHub Actions:
+
+```powershell
+$PROJECT_ID = "project-47695a8e-7cb2-4352-af2"
+$SA = "github-actions-gke@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com"
+
+gcloud secrets add-iam-policy-binding frontend-vm-host `
+  --project $PROJECT_ID `
+  --member="serviceAccount:$SA" `
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding frontend-vm-user `
+  --project $PROJECT_ID `
+  --member="serviceAccount:$SA" `
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding frontend-vm-port `
+  --project $PROJECT_ID `
+  --member="serviceAccount:$SA" `
+  --role="roles/secretmanager.secretAccessor"
+
+gcloud secrets add-iam-policy-binding frontend-vm-ssh-private-key `
+  --project $PROJECT_ID `
+  --member="serviceAccount:$SA" `
+  --role="roles/secretmanager.secretAccessor"
+```
+
+## GitHub Actions
+
+Los repositorios frontend ya no necesitan estos secrets:
+
+```text
+VM_HOST
+VM_USER
+VM_PORT
+VM_SSH_KEY
+```
+
+El workflow se autentica en Google Cloud mediante Workload Identity y luego lee estos secretos desde Secret Manager:
+
+```bash
+gcloud secrets versions access latest --secret=frontend-vm-host
+gcloud secrets versions access latest --secret=frontend-vm-user
+gcloud secrets versions access latest --secret=frontend-vm-port
+gcloud secrets versions access latest --secret=frontend-vm-ssh-private-key
+```
+
+Repositorios que usan este flujo:
 
 ```text
 banquito-web-personas-frontend
@@ -198,7 +297,7 @@ banquito-teller-frontend
 banquito-frontend-web-operador
 ```
 
-## Donde esta la llave privada para GitHub Actions
+## Llave privada local de respaldo
 
 La llave privada se dejo localmente fuera de los repositorios:
 
@@ -212,20 +311,14 @@ Comando para copiar su contenido:
 Get-Content C:\Users\User\Desktop\KUBERNETS-PROYECTO\.deploy-secrets\banquito_frontend_vm_key_github_actions -Raw
 ```
 
-Ese contenido se pega en GitHub como:
-
-```text
-VM_SSH_KEY
-```
-
-No se debe subir esa llave al repositorio.
+No se debe subir esa llave al repositorio. La fuente usada por CI/CD es Google Secret Manager.
 
 ## CI/CD esperado
 
 Cuando se hace `git push` a `main` en un repositorio frontend:
 
 1. GitHub Actions obtiene permisos en Google Cloud mediante Workload Identity.
-2. Lee secretos desde Secret Manager.
+2. Lee secretos de Identity Platform, Apigee y VM desde Secret Manager.
 3. Compila el frontend con Vite.
 4. Genera el directorio `dist`.
 5. Empaqueta `dist` como `frontend-dist.tgz`.
