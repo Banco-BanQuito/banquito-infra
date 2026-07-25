@@ -53,14 +53,25 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 90
+            initialDelaySeconds: 240
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 12
           livenessProbe:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 180
+            initialDelaySeconds: 600
             periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 6
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 30
           resources:
             requests:
               cpu: 100m
