@@ -92,6 +92,159 @@ banquito-clearing-events
 
 Nota: RabbitMQ queda como referencia historica/local. El flujo asincrono objetivo en GKE usa Google Cloud Pub/Sub.
 
+## Manejo de secretos para Pub/Sub
+
+Pub/Sub no usa usuario y contrasena como RabbitMQ. Por eso no se crean secretos tipo:
+
+```text
+PUBSUB_USER
+PUBSUB_PASSWORD
+PUBSUB_HOST_PASSWORD
+```
+
+La seguridad de Pub/Sub se maneja con identidad de nube:
+
+```text
+Pod en GKE
+  -> Kubernetes ServiceAccount
+  -> Workload Identity
+  -> Google Service Account
+  -> IAM
+  -> Pub/Sub
+```
+
+Esto significa que el acceso no depende de una clave guardada en un archivo, sino de permisos IAM asignados a una cuenta de servicio de Google Cloud.
+
+### Que NO va en Secret Manager
+
+Estos valores no son secretos y pueden ir en `ConfigMap`:
+
+```text
+GCP_PROJECT_ID
+PUBSUB_PROJECT_ID
+PUBSUB_TOPIC_PAYMENT_LINES
+PUBSUB_TOPIC_CLEARING_EVENTS
+PUBSUB_TOPIC_DEAD_LETTER
+PUBSUB_SUBSCRIPTION_PAYMENT_LINES_ONUS
+PUBSUB_SUBSCRIPTION_PAYMENT_LINES_OFFUS
+PUBSUB_SUBSCRIPTION_PAYMENT_LINES_INVALID
+PUBSUB_SUBSCRIPTION_CLEARING_OUTBOUND
+PUBSUB_SUBSCRIPTION_DEAD_LETTER_MONITOR
+PUBSUB_ROUTING_KEY_ONUS
+PUBSUB_ROUTING_KEY_OFFUS
+PUBSUB_ROUTING_KEY_INVALID
+PUBSUB_ROUTING_KEY_CLEARING_OUTBOUND
+```
+
+Estos valores son nombres de recursos, no credenciales. No permiten acceder por si solos a Pub/Sub.
+
+### Que SI protege el acceso
+
+El acceso se protege con:
+
+| Elemento | Funcion |
+| --- | --- |
+| Kubernetes ServiceAccount | Identidad usada por el Pod dentro de GKE. |
+| Google Service Account | Identidad real en Google Cloud. |
+| Workload Identity | Vincula la identidad Kubernetes con la identidad Google Cloud. |
+| IAM | Define si la identidad puede publicar o consumir mensajes. |
+
+Por ejemplo:
+
+```text
+file-reception-service
+  -> file-reception-pubsub-ksa
+  -> file-reception-pubsub@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com
+  -> roles/pubsub.publisher
+  -> roles/pubsub.subscriber
+```
+
+### Que SI puede ir en Secret Manager
+
+Secret Manager se usa para credenciales reales:
+
+```text
+passwords de bases de datos
+MongoDB URI
+API Keys de Apigee
+API Key de Identity Platform
+llave SSH de despliegue a VM
+SMTP password
+```
+
+Pub/Sub no necesita un secreto equivalente porque la autenticacion se resuelve mediante IAM.
+
+### Comandos para validar que Pub/Sub no depende de secretos
+
+Ver que no existen secretos Pub/Sub con passwords:
+
+```powershell
+gcloud secrets list `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --format="value(name)" | Select-String "pubsub|rabbit"
+```
+
+Ver las cuentas de servicio de Kubernetes usadas por Pub/Sub:
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get serviceaccount -n banquito-core
+kubectl --insecure-skip-tls-verify=true get serviceaccount -n banquito-switch
+```
+
+Ver anotaciones de Workload Identity:
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get serviceaccount account-core-pubsub-ksa `
+  -n banquito-core `
+  -o yaml
+
+kubectl --insecure-skip-tls-verify=true get serviceaccount file-reception-pubsub-ksa `
+  -n banquito-switch `
+  -o yaml
+
+kubectl --insecure-skip-tls-verify=true get serviceaccount clearinghouse-pubsub-ksa `
+  -n banquito-switch `
+  -o yaml
+```
+
+Ver permisos IAM asignados a las Google Service Accounts:
+
+```powershell
+gcloud projects get-iam-policy project-47695a8e-7cb2-4352-af2 `
+  --flatten="bindings[].members" `
+  --filter="bindings.members:file-reception-pubsub@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com" `
+  --format="table(bindings.role)"
+
+gcloud projects get-iam-policy project-47695a8e-7cb2-4352-af2 `
+  --flatten="bindings[].members" `
+  --filter="bindings.members:account-core-pubsub@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com" `
+  --format="table(bindings.role)"
+
+gcloud projects get-iam-policy project-47695a8e-7cb2-4352-af2 `
+  --flatten="bindings[].members" `
+  --filter="bindings.members:clearinghouse-pubsub@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com" `
+  --format="table(bindings.role)"
+```
+
+Ver topics y subscriptions:
+
+```powershell
+gcloud pubsub topics list --project project-47695a8e-7cb2-4352-af2
+gcloud pubsub subscriptions list --project project-47695a8e-7cb2-4352-af2
+```
+
+## Sustentacion para defensa
+
+Para defender este punto:
+
+```text
+RabbitMQ usaba credenciales de conexion, por eso antes existian variables sensibles como usuario y password.
+Al migrar a Google Cloud Pub/Sub, el broker es administrado por Google Cloud y la autenticacion se hace mediante IAM.
+Por esa razon no guardamos passwords de Pub/Sub en Secret Manager.
+Los microservicios obtienen permisos por Workload Identity: cada Pod usa una Kubernetes ServiceAccount que esta vinculada a una Google Service Account con permisos minimos de Pub/Sub.
+Los nombres de topics y subscriptions no son secretos; se almacenan en ConfigMap porque son configuracion no sensible.
+```
+
 ## Atributos de mensajes
 
 La clasificacion no la hace Pub/Sub. La clasificacion la hace `payment-line-classifier-service`, porque es regla de negocio del Switch.
