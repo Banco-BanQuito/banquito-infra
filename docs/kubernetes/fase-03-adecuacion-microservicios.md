@@ -12,7 +12,7 @@ Asegurar que cada microservicio pueda ejecutarse dentro de un Pod sin depender d
 | Configuracion | Usar variables de entorno |
 | Secretos | No guardar passwords reales en Git |
 | Bases | Usar endpoints Cloud SQL / MongoDB Atlas |
-| RabbitMQ | Usar endpoint externo o administrado |
+| Pub/Sub | Usar Google Cloud Pub/Sub administrado |
 | Dockerfile | Imagen ligera y compatible con GKE |
 
 ## Variables esperadas
@@ -40,9 +40,9 @@ party-service -> MySQL
 Switch:
 
 ```text
-file-reception-service -> MySQL, MongoDB, RabbitMQ
+file-reception-service -> MySQL, MongoDB, Pub/Sub
 tariff-service -> MySQL
-clearinghouse-service -> MongoDB, RabbitMQ
+clearinghouse-service -> MongoDB, Pub/Sub
 report-service -> MongoDB
 notification-service -> MongoDB, SMTP
 ```

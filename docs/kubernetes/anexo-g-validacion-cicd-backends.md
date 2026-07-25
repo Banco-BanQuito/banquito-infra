@@ -142,7 +142,7 @@ El problema era que:
 kubectl rollout status
 ```
 
-espera que el Pod quede `Ready`. En este proyecto varios backends dependen de servicios externos como Cloud SQL, MongoDB, RabbitMQ, SMTP, OAuth y Secrets reales. Si alguno de esos servicios o credenciales no esta listo, el contenedor puede quedar en `CrashLoopBackOff` o no pasar readiness, aunque la imagen se haya construido, publicado y aplicado correctamente.
+espera que el Pod quede `Ready`. En este proyecto varios backends dependen de servicios externos como Cloud SQL, MongoDB, Pub/Sub, SMTP, OAuth y Secrets reales. Si alguno de esos servicios o credenciales no esta listo, el contenedor puede quedar en `CrashLoopBackOff` o no pasar readiness, aunque la imagen se haya construido, publicado y aplicado correctamente.
 
 Decision aplicada:
 

@@ -1,4 +1,4 @@
-# Anexo A - Rutas backend para Apigee
+﻿# Anexo A - Rutas backend para Apigee
 
 ## Objetivo
 
@@ -152,3 +152,4 @@ GET  /api/v2/notifications/health
 /api/v2/reports/**
 /api/v2/notifications/**
 ```
+

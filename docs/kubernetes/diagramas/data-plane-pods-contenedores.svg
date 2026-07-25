@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1300" height="850" viewBox="0 0 1300 850">
+  <defs>
+    <style>
+      .title { font: 700 28px Arial, sans-serif; fill: #102033; }
+      .subtitle { font: 700 20px Arial, sans-serif; fill: #1e293b; }
+      .label { font: 700 15px Arial, sans-serif; fill: #1f2937; }
+      .small { font: 500 13px Arial, sans-serif; fill: #475569; }
+      .tiny { font: 500 12px Arial, sans-serif; fill: #64748b; }
+      .cluster { fill: #f8fafc; stroke: #475569; stroke-width: 2.5; rx: 16; }
+      .node { fill: #ffffff; stroke: #2563eb; stroke-width: 2.5; rx: 14; }
+      .runtime { fill: #eff6ff; stroke: #0284c7; stroke-width: 2; rx: 12; }
+      .system { fill: #e0f2fe; stroke: #0369a1; stroke-width: 2; rx: 10; }
+      .pod { fill: #ecfdf5; stroke: #059669; stroke-width: 2; rx: 10; }
+      .container { fill: #ffffff; stroke: #10b981; stroke-width: 1.8; rx: 8; }
+      .svc { fill: #fef3c7; stroke: #d97706; stroke-width: 2; rx: 10; }
+      .cloud { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2; rx: 12; }
+      .arrow { stroke: #334155; stroke-width: 2.3; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#334155" />
+    </marker>
+  </defs>
+
+  <rect width="1300" height="850" fill="#f8fafc" />
+  <text x="45" y="55" class="title">Data Plane, Worker Nodes, Pods y Contenedores - BanQuito GKE</text>
+  <text x="45" y="85" class="small">Cluster: banquito-cluster-east | GKE Autopilot | Region: us-east1</text>
+
+  <rect x="45" y="120" width="1210" height="670" class="cluster" />
+  <text x="75" y="155" class="subtitle">Kubernetes Cluster - Plano de datos</text>
+  <text x="75" y="182" class="small">En Autopilot los nodos worker son creados y administrados automaticamente por Google Cloud.</text>
+
+  <rect x="85" y="220" width="340" height="500" class="node" />
+  <text x="120" y="255" class="subtitle">Worker Node 1</text>
+  <text x="120" y="280" class="small">Nodo Linux administrado por GKE</text>
+  <rect x="115" y="305" width="280" height="70" class="runtime" />
+  <text x="145" y="334" class="label">Container runtime</text>
+  <text x="145" y="355" class="tiny">Administrado por GKE, compatible con CRI/containerd</text>
+  <rect x="115" y="395" width="120" height="55" class="system" />
+  <text x="150" y="427" class="label">Kubelet</text>
+  <rect x="275" y="395" width="120" height="55" class="system" />
+  <text x="305" y="427" class="label">Kube proxy</text>
+  <rect x="115" y="480" width="125" height="145" class="pod" />
+  <text x="150" y="510" class="label">Pod</text>
+  <rect x="135" y="530" width="85" height="35" class="container" />
+  <text x="145" y="552" class="tiny">account-core</text>
+  <rect x="135" y="575" width="85" height="35" class="container" />
+  <text x="150" y="597" class="tiny">container</text>
+  <rect x="270" y="480" width="125" height="145" class="pod" />
+  <text x="305" y="510" class="label">Pod</text>
+  <rect x="290" y="530" width="85" height="35" class="container" />
+  <text x="300" y="552" class="tiny">party</text>
+  <rect x="290" y="575" width="85" height="35" class="container" />
+  <text x="305" y="597" class="tiny">container</text>
+
+  <rect x="480" y="220" width="340" height="500" class="node" />
+  <text x="515" y="255" class="subtitle">Worker Node 2</text>
+  <text x="515" y="280" class="small">Puede aparecer al levantar mas pods</text>
+  <rect x="510" y="305" width="280" height="70" class="runtime" />
+  <text x="540" y="334" class="label">Container runtime</text>
+  <text x="540" y="355" class="tiny">Ejecuta contenedores de los Pods</text>
+  <rect x="510" y="395" width="120" height="55" class="system" />
+  <text x="545" y="427" class="label">Kubelet</text>
+  <rect x="670" y="395" width="120" height="55" class="system" />
+  <text x="700" y="427" class="label">Kube proxy</text>
+  <rect x="510" y="480" width="125" height="145" class="pod" />
+  <text x="545" y="510" class="label">Pod</text>
+  <rect x="530" y="530" width="85" height="35" class="container" />
+  <text x="537" y="552" class="tiny">file-recep.</text>
+  <rect x="530" y="575" width="85" height="35" class="container" />
+  <text x="545" y="597" class="tiny">container</text>
+  <rect x="665" y="480" width="125" height="145" class="pod" />
+  <text x="700" y="510" class="label">Pod</text>
+  <rect x="685" y="530" width="85" height="35" class="container" />
+  <text x="692" y="552" class="tiny">clearing</text>
+  <rect x="685" y="575" width="85" height="35" class="container" />
+  <text x="700" y="597" class="tiny">container</text>
+
+  <rect x="875" y="220" width="340" height="500" class="node" />
+  <text x="910" y="255" class="subtitle">Worker Node N</text>
+  <text x="910" y="280" class="small">Escalado automatico por Autopilot</text>
+  <rect x="905" y="305" width="280" height="70" class="runtime" />
+  <text x="935" y="334" class="label">Container runtime</text>
+  <text x="935" y="355" class="tiny">No se instala manualmente Docker</text>
+  <rect x="905" y="395" width="120" height="55" class="system" />
+  <text x="940" y="427" class="label">Kubelet</text>
+  <rect x="1065" y="395" width="120" height="55" class="system" />
+  <text x="1095" y="427" class="label">Kube proxy</text>
+  <rect x="905" y="480" width="125" height="145" class="pod" />
+  <text x="940" y="510" class="label">Pod</text>
+  <rect x="925" y="530" width="85" height="35" class="container" />
+  <text x="934" y="552" class="tiny">frontend</text>
+  <rect x="925" y="575" width="85" height="35" class="container" />
+  <text x="940" y="597" class="tiny">nginx</text>
+  <rect x="1060" y="480" width="125" height="145" class="pod" />
+  <text x="1095" y="510" class="label">Pod</text>
+  <rect x="1080" y="530" width="85" height="35" class="container" />
+  <text x="1089" y="552" class="tiny">tariff</text>
+  <rect x="1080" y="575" width="85" height="35" class="container" />
+  <text x="1095" y="597" class="tiny">container</text>
+
+  <rect x="175" y="735" width="880" height="45" class="svc" />
+  <text x="195" y="763" class="label">Services ClusterIP: DNS interno estable para acceder a Pods aunque cambien de IP o nodo</text>
+
+  <rect x="930" y="125" width="285" height="70" class="cloud" />
+  <text x="955" y="153" class="label">Control Plane GKE</text>
+  <text x="955" y="175" class="tiny">Decide estado deseado y programa Pods</text>
+  <path d="M930 160 C820 180 760 205 690 225" class="arrow" />
+  <path d="M250 625 C290 700 355 725 485 745" class="dash" />
+  <path d="M645 625 C650 695 690 725 760 745" class="dash" />
+  <path d="M1025 625 C990 695 945 725 880 745" class="dash" />
+</svg>

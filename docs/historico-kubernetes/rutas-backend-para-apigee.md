@@ -1,4 +1,4 @@
-# Rutas backend para configurar en Apigee
+﻿# Rutas backend para configurar en Apigee
 
 ## Objetivo
 
@@ -338,3 +338,4 @@ ClusterIP
 ```
 
 Por tanto, el Target Endpoint de Apigee debe ser el endpoint publico del Ingress/Gateway/LoadBalancer, no el DNS interno de Kubernetes.
+

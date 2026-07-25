@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="950" viewBox="0 0 1600 950">
+  <defs>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #102033; }
+      .subtitle { font: 600 18px Arial, sans-serif; fill: #334155; }
+      .label { font: 600 15px Arial, sans-serif; fill: #1f2937; }
+      .small { font: 500 13px Arial, sans-serif; fill: #475569; }
+      .tiny { font: 500 12px Arial, sans-serif; fill: #64748b; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 12; }
+      .soft { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; rx: 12; }
+      .control { fill: #e0f2fe; stroke: #0284c7; stroke-width: 2; rx: 12; }
+      .data { fill: #ecfdf5; stroke: #059669; stroke-width: 2; rx: 12; }
+      .cloud { fill: #fff7ed; stroke: #ea580c; stroke-width: 2; rx: 12; }
+      .security { fill: #f5f3ff; stroke: #7c3aed; stroke-width: 2; rx: 12; }
+      .route { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 12; }
+      .pod { fill: #ffffff; stroke: #10b981; stroke-width: 2; rx: 10; }
+      .svc { fill: #f0f9ff; stroke: #0ea5e9; stroke-width: 2; rx: 10; }
+      .arrow { stroke: #334155; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .dash { stroke: #64748b; stroke-width: 2; fill: none; stroke-dasharray: 8 6; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#334155" />
+    </marker>
+  </defs>
+
+  <rect width="1600" height="950" fill="#f8fafc" />
+  <text x="50" y="55" class="title">Cluster Kubernetes BanQuito en Google Kubernetes Engine</text>
+  <text x="50" y="85" class="small">Cluster: banquito-cluster-east | Modo: Autopilot | Region: us-east1 | Version: 1.35.5-gke.1241004</text>
+
+  <rect x="45" y="115" width="1510" height="780" class="box" />
+  <text x="70" y="150" class="subtitle">Google Kubernetes Engine - GKE Autopilot</text>
+
+  <rect x="80" y="180" width="360" height="220" class="control" />
+  <text x="105" y="215" class="subtitle">Plano de control</text>
+  <text x="105" y="245" class="small">Administrado por Google Cloud</text>
+  <rect x="110" y="270" width="135" height="45" class="box" />
+  <text x="132" y="298" class="label">API Server</text>
+  <rect x="270" y="270" width="135" height="45" class="box" />
+  <text x="296" y="298" class="label">Scheduler</text>
+  <rect x="110" y="330" width="135" height="45" class="box" />
+  <text x="127" y="358" class="label">Controllers</text>
+  <rect x="270" y="330" width="135" height="45" class="box" />
+  <text x="319" y="358" class="label">etcd</text>
+
+  <rect x="480" y="180" width="1035" height="610" class="data" />
+  <text x="510" y="215" class="subtitle">Plano de datos - Workloads BanQuito</text>
+  <text x="510" y="245" class="small">Autopilot crea nodos worker automaticamente cuando existen pods pendientes.</text>
+
+  <rect x="520" y="280" width="300" height="450" class="soft" />
+  <text x="545" y="315" class="subtitle">Namespace: banquito-core</text>
+  <rect x="550" y="345" width="240" height="58" class="pod" />
+  <text x="575" y="372" class="label">account-core-service</text>
+  <text x="575" y="392" class="tiny">HTTP 8081 | gRPC 9091</text>
+  <rect x="550" y="425" width="240" height="58" class="pod" />
+  <text x="575" y="452" class="label">accounting-service</text>
+  <text x="575" y="472" class="tiny">HTTP 8082 | gRPC 9092</text>
+  <rect x="550" y="505" width="240" height="58" class="pod" />
+  <text x="575" y="532" class="label">party-service</text>
+  <text x="575" y="552" class="tiny">HTTP 8083 | gRPC 9093</text>
+  <rect x="550" y="595" width="240" height="70" class="svc" />
+  <text x="580" y="624" class="label">Services ClusterIP</text>
+  <text x="580" y="646" class="tiny">DNS interno estable</text>
+
+  <rect x="850" y="280" width="300" height="450" class="soft" />
+  <text x="875" y="315" class="subtitle">Namespace: banquito-switch</text>
+  <rect x="880" y="345" width="240" height="48" class="pod" />
+  <text x="905" y="374" class="label">file-reception-service</text>
+  <rect x="880" y="405" width="240" height="48" class="pod" />
+  <text x="905" y="434" class="label">clearinghouse-service</text>
+  <rect x="880" y="465" width="240" height="48" class="pod" />
+  <text x="905" y="494" class="label">tariff-service</text>
+  <rect x="880" y="525" width="240" height="48" class="pod" />
+  <text x="905" y="554" class="label">notification-service</text>
+  <rect x="880" y="585" width="240" height="48" class="pod" />
+  <text x="905" y="614" class="label">report-service</text>
+  <rect x="880" y="655" width="240" height="55" class="svc" />
+  <text x="915" y="686" class="label">Services ClusterIP</text>
+
+  <rect x="1180" y="280" width="300" height="450" class="soft" />
+  <text x="1205" y="315" class="subtitle">Namespace: banquito-frontend</text>
+  <rect x="1210" y="345" width="240" height="48" class="pod" />
+  <text x="1240" y="374" class="label">web-personas</text>
+  <rect x="1210" y="405" width="240" height="48" class="pod" />
+  <text x="1240" y="434" class="label">web-empresas</text>
+  <rect x="1210" y="465" width="240" height="48" class="pod" />
+  <text x="1240" y="494" class="label">teller</text>
+  <rect x="1210" y="525" width="240" height="48" class="pod" />
+  <text x="1240" y="554" class="label">operador</text>
+  <rect x="1210" y="655" width="240" height="55" class="svc" />
+  <text x="1245" y="686" class="label">Services ClusterIP</text>
+
+  <rect x="80" y="445" width="360" height="285" class="route" />
+  <text x="105" y="480" class="subtitle">Entrada publica controlada</text>
+  <rect x="115" y="510" width="290" height="62" class="box" />
+  <text x="145" y="538" class="label">GKE Gateway</text>
+  <text x="145" y="558" class="tiny">IP publica: 8.233.141.65</text>
+  <rect x="115" y="595" width="290" height="85" class="box" />
+  <text x="145" y="625" class="label">HTTPRoutes</text>
+  <text x="145" y="647" class="tiny">personas, empresas, teller, operador</text>
+  <text x="145" y="667" class="tiny">core-routes y switch-routes</text>
+
+  <rect x="80" y="755" width="1435" height="105" class="cloud" />
+  <text x="105" y="790" class="subtitle">Servicios administrados fuera del cluster</text>
+  <text x="105" y="825" class="label">Cloud SQL PostgreSQL/MySQL</text>
+  <text x="365" y="825" class="label">MongoDB Atlas</text>
+  <text x="565" y="825" class="label">Pub/Sub</text>
+  <text x="705" y="825" class="label">Secret Manager</text>
+  <text x="925" y="825" class="label">Artifact Registry</text>
+  <text x="1175" y="825" class="label">Cloud Logging/Monitoring</text>
+
+  <rect x="80" y="25" width="0" height="0" fill="none" />
+  <rect x="500" y="115" width="380" height="85" class="security" />
+  <text x="525" y="150" class="subtitle">Apigee + Identity Platform</text>
+  <text x="525" y="178" class="small">JWT OAuth 2 + API Key por aplicacion</text>
+
+  <path d="M690 200 C640 245 520 410 440 535" class="arrow" />
+  <path d="M405 540 L520 600" class="arrow" />
+  <path d="M405 540 L850 600" class="arrow" />
+  <path d="M405 540 L1180 600" class="arrow" />
+  <path d="M790 375 C835 365 835 365 880 370" class="dash" />
+  <path d="M790 455 C835 445 835 445 880 430" class="dash" />
+  <path d="M790 535 C835 525 835 525 880 550" class="dash" />
+  <path d="M1000 633 C1000 705 720 730 565 790" class="dash" />
+  <path d="M670 665 C670 720 220 730 220 790" class="dash" />
+  <path d="M670 665 C670 730 1180 730 1280 790" class="dash" />
+
+  <text x="930" y="155" class="small">Flujo publico: Frontend -> Apigee -> Gateway -> Service -> Pod</text>
+  <text x="930" y="180" class="small">Flujo interno: Microservicio -> Service DNS -> Microservicio</text>
+  <text x="930" y="205" class="small">Flujo asincrono: File Reception -> Pub/Sub -> Clearinghouse</text>
+</svg>

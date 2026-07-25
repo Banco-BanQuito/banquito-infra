@@ -1,4 +1,4 @@
-# Anexo N - Validacion completa en GKE
+﻿# Anexo N - Validacion completa en GKE
 
 ## Objetivo
 
@@ -824,3 +824,4 @@ La prueba completa confirma:
 7. Las bases de datos se consumen como servicios administrados externos.
 8. El ajuste de resources.requests permitio correr todo el sistema dentro de la cuota disponible.
 ```
+

@@ -1,4 +1,4 @@
-# Anexo K - Google Pub/Sub y Workload Identity
+﻿# Anexo K - Google Pub/Sub y Workload Identity
 
 ## Objetivo
 
@@ -90,7 +90,41 @@ banquito-clearing-events
   -> clearing-outbound-sub      filter attributes.routingKey = "clearing.outbound"
 ```
 
-Nota: las variables RabbitMQ se mantienen temporalmente porque el codigo Java actual todavia contiene dependencias y listeners Rabbit. Se retiraran cuando la migracion de codigo termine.
+Nota: RabbitMQ queda como referencia historica/local. El flujo asincrono objetivo en GKE usa Google Cloud Pub/Sub.
+
+## Atributos de mensajes
+
+La clasificacion no la hace Pub/Sub. La clasificacion la hace `payment-line-classifier-service`, porque es regla de negocio del Switch.
+
+Pub/Sub solo distribuye mensajes ya clasificados usando atributos:
+
+| Atributo | Ejemplo | Uso |
+| --- | --- | --- |
+| `messageType` | `PAYMENT_LINE_CLASSIFIED` | Identifica el tipo de evento. |
+| `routingKey` | `onus`, `offus`, `invalid` | Permite filtrar subscriptions. |
+| `routingClassification` | `ON_US`, `OFF_US`, `INVALID` | Expone la decision de dominio. |
+| `batchId` | `24a0cc51-b98a-48a8-b722-a80dc67a1604` | Trazabilidad del lote. |
+| `lineNumber` | `125` | Trazabilidad de linea. |
+| `source` | `payment-line-classifier-service` | Servicio que publico el evento. |
+| `scheduledProcessAt` | `2026-07-23T14:00:00Z` | Fecha programada del proceso. |
+
+Verificar filtros de subscriptions:
+
+```powershell
+gcloud pubsub subscriptions describe payment-lines-onus-sub --project=project-47695a8e-7cb2-4352-af2 --format="value(filter)"
+gcloud pubsub subscriptions describe payment-lines-offus-sub --project=project-47695a8e-7cb2-4352-af2 --format="value(filter)"
+gcloud pubsub subscriptions describe payment-lines-invalid-sub --project=project-47695a8e-7cb2-4352-af2 --format="value(filter)"
+gcloud pubsub subscriptions describe clearing-outbound-sub --project=project-47695a8e-7cb2-4352-af2 --format="value(filter)"
+```
+
+Valores esperados:
+
+```text
+attributes.routingKey = "onus"
+attributes.routingKey = "offus"
+attributes.routingKey = "invalid"
+attributes.routingKey = "clearing.outbound"
+```
 
 ## Kubernetes ServiceAccounts creadas
 
@@ -392,7 +426,7 @@ Se migro el codigo Java de los servicios que dependian de RabbitMQ para el flujo
 
 | Microservicio | Cambio aplicado | Resultado |
 | --- | --- | --- |
-| `banquito-file-reception-service` | Se reemplazo publicacion/consumo RabbitMQ por publishers/subscribers de Google Pub/Sub. | Pod `1/1 Running` |
+| `banquito-file-reception-service` | Se reemplazo publicacion/consumo RabbitMQ por publishers/subscribers de Google Pub/Sub. La separacion final queda documentada en `anexo-r-separacion-switch-pubsub.md`. | Pod `1/1 Running` |
 | `banquito-clearinghouse-service` | Se reemplazo el listener RabbitMQ por subscriber de Google Pub/Sub sobre `clearing-outbound-sub`. | Pod `1/1 Running` |
 
 Tambien se agrego configuracion explicita de Jackson (`ObjectMapper`) porque Spring Boot 4 no estaba registrando automaticamente el bean requerido por los componentes Pub/Sub.
@@ -478,3 +512,5 @@ clearinghouse-service
 ```
 
 La infraestructura Pub/Sub, Workload Identity, CI/CD, Artifact Registry y runtime Kubernetes estan funcionando para estos servicios.
+
+

@@ -74,7 +74,7 @@ kubectl scale deployment --all --replicas=0 -n banquito-frontend
 
 ## Apagar backends para no consumir
 
-Cuando los Pods esten en `CrashLoopBackOff`, `Pending` o no se este probando runtime, se pueden dejar los backends en `0/0` para reducir consumo mientras se corrigen Secrets, bases de datos o RabbitMQ.
+Cuando los Pods esten en `CrashLoopBackOff`, `Pending` o no se este probando runtime, se pueden dejar los backends en `0/0` para reducir consumo mientras se corrigen Secrets, bases de datos o Pub/Sub.
 
 Esta operacion no elimina recursos. Solo cambia la cantidad de replicas de los `Deployments`.
 

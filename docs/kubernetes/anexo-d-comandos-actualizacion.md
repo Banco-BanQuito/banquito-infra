@@ -85,3 +85,198 @@ Para despliegues trazables usar tags por commit:
 ```text
 us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/account-core-service:<github-sha>
 ```
+## Levantar deployments individuales
+
+Core:
+
+```powershell
+kubectl scale deployment account-core-service --replicas=1 -n banquito-core
+kubectl scale deployment accounting-service --replicas=1 -n banquito-core
+kubectl scale deployment party-service --replicas=1 -n banquito-core
+```
+
+Switch:
+
+```powershell
+kubectl scale deployment file-reception-service --replicas=1 -n banquito-switch
+kubectl scale deployment clearinghouse-service --replicas=1 -n banquito-switch
+kubectl scale deployment tariff-service --replicas=1 -n banquito-switch
+kubectl scale deployment report-service --replicas=1 -n banquito-switch
+kubectl scale deployment notification-service --replicas=1 -n banquito-switch
+```
+
+Frontends:
+
+```powershell
+kubectl scale deployment web-personas-frontend --replicas=1 -n banquito-frontend
+kubectl scale deployment web-empresas-frontend --replicas=1 -n banquito-frontend
+kubectl scale deployment teller-frontend --replicas=1 -n banquito-frontend
+kubectl scale deployment operador-frontend --replicas=1 -n banquito-frontend
+```
+
+## Levantar por bloques
+
+Core completo:
+
+```powershell
+kubectl scale deployment account-core-service accounting-service party-service --replicas=1 -n banquito-core
+```
+
+Switch completo:
+
+```powershell
+kubectl scale deployment file-reception-service clearinghouse-service tariff-service report-service notification-service --replicas=1 -n banquito-switch
+```
+
+Switch por bloque de procesamiento:
+
+```powershell
+kubectl scale deployment file-reception-service clearinghouse-service --replicas=1 -n banquito-switch
+```
+
+Switch por bloque secundario:
+
+```powershell
+kubectl scale deployment tariff-service report-service notification-service --replicas=1 -n banquito-switch
+```
+
+Frontends completos:
+
+```powershell
+kubectl scale deployment web-personas-frontend web-empresas-frontend teller-frontend operador-frontend --replicas=1 -n banquito-frontend
+```
+
+## Bajar por bloques
+
+Core completo:
+
+```powershell
+kubectl scale deployment account-core-service accounting-service party-service --replicas=0 -n banquito-core
+```
+
+Switch completo:
+
+```powershell
+kubectl scale deployment file-reception-service clearinghouse-service tariff-service report-service notification-service --replicas=0 -n banquito-switch
+```
+
+Frontends completos:
+
+```powershell
+kubectl scale deployment web-personas-frontend web-empresas-frontend teller-frontend operador-frontend --replicas=0 -n banquito-frontend
+```
+
+## Bajar individual
+
+Core:
+
+```powershell
+kubectl scale deployment account-core-service --replicas=0 -n banquito-core
+kubectl scale deployment accounting-service --replicas=0 -n banquito-core
+kubectl scale deployment party-service --replicas=0 -n banquito-core
+```
+
+Switch:
+
+```powershell
+kubectl scale deployment file-reception-service --replicas=0 -n banquito-switch
+kubectl scale deployment clearinghouse-service --replicas=0 -n banquito-switch
+kubectl scale deployment tariff-service --replicas=0 -n banquito-switch
+kubectl scale deployment report-service --replicas=0 -n banquito-switch
+kubectl scale deployment notification-service --replicas=0 -n banquito-switch
+```
+
+Frontends:
+
+```powershell
+kubectl scale deployment web-personas-frontend --replicas=0 -n banquito-frontend
+kubectl scale deployment web-empresas-frontend --replicas=0 -n banquito-frontend
+kubectl scale deployment teller-frontend --replicas=0 -n banquito-frontend
+kubectl scale deployment operador-frontend --replicas=0 -n banquito-frontend
+```
+
+## Bajar seleccionados
+
+Solo `file-reception-service` y `clearinghouse-service`:
+
+```powershell
+kubectl scale deployment file-reception-service clearinghouse-service --replicas=0 -n banquito-switch
+```
+
+Solo frontends web:
+
+```powershell
+kubectl scale deployment web-personas-frontend web-empresas-frontend --replicas=0 -n banquito-frontend
+```
+
+## Ver worker nodes y ubicacion de pods
+
+Ver los worker nodes activos:
+
+```powershell
+kubectl get nodes -o wide
+```
+
+Ver todos los pods y en que worker node estan alojados:
+
+```powershell
+kubectl get pods -A -o wide
+```
+
+Ver pods ordenados por worker node:
+
+```powershell
+kubectl get pods -A -o wide --sort-by=.spec.nodeName
+```
+
+Ver solo los pods del Core con su worker node:
+
+```powershell
+kubectl get pods -n banquito-core -o wide
+```
+
+Ver solo los pods del Switch con su worker node:
+
+```powershell
+kubectl get pods -n banquito-switch -o wide
+```
+
+Ver solo los pods de Frontend con su worker node:
+
+```powershell
+kubectl get pods -n banquito-frontend -o wide
+```
+
+Ver detalle de un worker node:
+
+```powershell
+kubectl describe node <nombre-del-worker-node>
+```
+
+En el detalle del nodo revisar:
+
+| Seccion | Que muestra |
+| --- | --- |
+| `Capacity` | CPU y memoria total del nodo. |
+| `Allocatable` | CPU y memoria disponible para pods. |
+| `Non-terminated Pods` | Pods que estan corriendo en ese worker node. |
+| `Allocated resources` | Recursos solicitados por los pods del nodo. |
+| `Events` | Eventos importantes del nodo. |
+
+Ver consumo de worker nodes:
+
+```powershell
+kubectl top nodes
+```
+
+Ver consumo de pods:
+
+```powershell
+kubectl top pods -A
+```
+
+Ver consumo de pods del Switch ordenado por CPU:
+
+```powershell
+kubectl top pods -n banquito-switch --sort-by=cpu
+```

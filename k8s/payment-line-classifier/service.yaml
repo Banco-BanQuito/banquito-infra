@@ -1,0 +1,17 @@
+﻿apiVersion: v1
+kind: Service
+metadata:
+  name: payment-line-classifier-service
+  namespace: banquito-switch
+  labels:
+    app: payment-line-classifier
+spec:
+  type: ClusterIP
+  selector:
+    app: payment-line-classifier
+  ports:
+    - name: http
+      port: 8090
+      targetPort: 8090
+
+

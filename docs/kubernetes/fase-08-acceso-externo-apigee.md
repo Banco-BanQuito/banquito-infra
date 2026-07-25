@@ -1,4 +1,4 @@
-# FASE 8 - Configuracion de acceso externo
+﻿# FASE 8 - Configuracion de acceso externo
 
 ## Objetivo
 
@@ -897,3 +897,4 @@ Comando para apagar frontends al terminar la prueba:
 ```powershell
 kubectl scale deployment --all --replicas=0 -n banquito-frontend
 ```
+

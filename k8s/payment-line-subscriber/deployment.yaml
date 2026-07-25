@@ -1,33 +1,35 @@
 ﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: file-reception-service
+  name: payment-line-subscriber-service
   namespace: banquito-switch
   labels:
-    app: file-reception
+    app: payment-line-subscriber
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: file-reception
+      app: payment-line-subscriber
   template:
     metadata:
       labels:
-        app: file-reception
+        app: payment-line-subscriber
     spec:
       serviceAccountName: file-reception-pubsub-ksa
       containers:
-        - name: file-reception-service
-          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/file-reception-service:latest
+        - name: payment-line-subscriber-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-subscriber-service:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8084
+              containerPort: 8091
           env:
             - name: SERVER_PORT
-              value: "8084"
+              value: "8091"
+            - name: SPRING_APPLICATION_NAME
+              value: banquito-payment-line-subscriber-service
             - name: DB_URL
               value: "jdbc:mysql://136.111.132.119:3306/filedb"
             - name: DB_USER
@@ -35,7 +37,13 @@ spec:
             - name: APP_EMBEDDED_ROUTER_ENABLED
               value: "false"
             - name: APP_DISPATCH_ENABLED
+              value: "true"
+            - name: APP_DISPATCH_ONUS_ENABLED
+              value: "true"
+            - name: APP_DISPATCH_OFFUS_ENABLED
               value: "false"
+            - name: APP_DISPATCH_INVALID_ENABLED
+              value: "true"
           envFrom:
             - configMapRef:
                 name: banquito-config
@@ -64,5 +72,4 @@ spec:
             limits:
               cpu: 500m
               memory: 768Mi
-
 

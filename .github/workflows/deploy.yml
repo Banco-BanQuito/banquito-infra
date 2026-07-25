@@ -56,6 +56,10 @@ jobs:
         run: |
           kubectl apply --recursive -f rendered-k8s
 
+      - name: Remove archived frontend namespace from GKE
+        run: |
+          kubectl delete namespace banquito-frontend --ignore-not-found
+
       - name: Show services
         run: |
           kubectl get svc -A
@@ -64,7 +68,6 @@ jobs:
         run: |
           kubectl get pods -n banquito-core -o wide
           kubectl get pods -n banquito-switch -o wide
-          kubectl get pods -n banquito-frontend -o wide
 
       - name: Show external access
         run: |

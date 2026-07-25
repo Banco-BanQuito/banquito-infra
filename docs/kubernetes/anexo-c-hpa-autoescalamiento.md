@@ -52,7 +52,7 @@ kubectl apply -f .\hpa
 
 Fecha de ajuste: `2026-07-18`.
 
-Se subieron los recursos de los backends Spring Boot porque los valores iniciales eran demasiado bajos para aplicaciones Java con conexiones a bases de datos, gRPC, RabbitMQ y health checks.
+Se subieron los recursos de los backends Spring Boot porque los valores iniciales eran demasiado bajos para aplicaciones Java con conexiones a bases de datos, gRPC, Pub/Sub y health checks.
 
 Perfil aplicado a backends pesados:
 

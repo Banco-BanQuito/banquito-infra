@@ -2,7 +2,9 @@
 
 ## Objetivo
 
-Crear pipelines para que los cambios de las aplicaciones se desplieguen automaticamente en el orquestador de contenedores.
+Crear pipelines para que los cambios de las aplicaciones se desplieguen automaticamente.
+
+Para backends, el despliegue automatizado termina en el orquestador de contenedores GKE. Para frontends, el despliegue automatizado termina en una VM con Nginx, porque las aplicaciones Vite generan archivos estaticos y ya no se ejecutan como Pods.
 
 El requisito se cumple cuando:
 
@@ -14,6 +16,17 @@ git push
   -> push Artifact Registry
   -> actualizar Deployment en GKE
   -> verificar rollout
+```
+
+Para frontends:
+
+```text
+git push
+  -> GitHub Actions
+  -> leer Secret Manager
+  -> npm ci
+  -> npm run build
+  -> publicar dist en VM/Nginx
 ```
 
 ## Aclaracion importante
@@ -77,12 +90,13 @@ Separacion aplicada:
 | Workflow | Responsabilidad | Ejecuta pruebas |
 | --- | --- | --- |
 | `ci.yml` | Validacion rapida de compilacion | Temporalmente no |
-| `docker-publish.yml` | Build de imagen, push a Artifact Registry y deploy a GKE | No, para no bloquear despliegue por tests legacy |
+| `docker-publish.yml` | Backends: build de imagen, push a Artifact Registry y deploy a GKE | No, para no bloquear despliegue por tests legacy |
+| `deploy-vm.yml` | Frontends: build Vite y deploy de `dist` a VM/Nginx | No |
 | `sonarcloud.yml` | Calidad, pruebas y cobertura | Si |
 
 ## Estado implementado
 
-Se reemplazo el workflow `docker-publish.yml` de los 12 repositorios de aplicacion para que ya no sea solo publicacion de imagen.
+Se reemplazo el workflow `docker-publish.yml` de los repositorios backend para que ya no sea solo publicacion de imagen.
 
 Ahora cada repositorio ejecuta:
 
@@ -96,7 +110,7 @@ git push a main
   -> kubectl rollout status
 ```
 
-Repositorios cubiertos:
+Repositorios backend cubiertos:
 
 | Repositorio | Imagen | Deployment | Namespace |
 | --- | --- | --- | --- |
@@ -108,10 +122,15 @@ Repositorios cubiertos:
 | `banquito-clearinghouse-service` | `clearinghouse-service` | `clearinghouse-service` | `banquito-switch` |
 | `banquito-report-service` | `report-service` | `report-service` | `banquito-switch` |
 | `banquito-notification-service` | `notification-service` | `notification-service` | `banquito-switch` |
-| `banquito-teller-frontend` | `teller-frontend` | `teller-frontend` | `banquito-frontend` |
-| `banquito-web-personas-frontend` | `web-personas-frontend` | `web-personas-frontend` | `banquito-frontend` |
-| `banquito-web-empresas-frontend` | `web-empresas-frontend` | `web-empresas-frontend` | `banquito-frontend` |
-| `banquito-frontend-web-operador` | `operador-frontend` | `operador-frontend` | `banquito-frontend` |
+
+Repositorios frontend cubiertos:
+
+| Repositorio | Workflow | Destino |
+| --- | --- | --- |
+| `banquito-teller-frontend` | `deploy-vm.yml` | VM/Nginx |
+| `banquito-web-personas-frontend` | `deploy-vm.yml` | VM/Nginx |
+| `banquito-web-empresas-frontend` | `deploy-vm.yml` | VM/Nginx |
+| `banquito-frontend-web-operador` | `deploy-vm.yml` | VM/Nginx |
 
 ## Registro de imagenes
 
@@ -353,95 +372,30 @@ Si los tests estan rotos, Sonar debe fallar. Ese fallo corresponde a calidad/cob
 
 ## Plantilla de pipeline para frontend
 
-Ejemplo para `web-personas-frontend`.
+Los frontends ya no construyen imagen Docker ni ejecutan `kubectl`. El pipeline genera el build estatico y lo publica en la VM.
 
-```yaml
-name: Build and Deploy Frontend to GKE
+Ejemplo logico:
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-env:
-  PROJECT_ID: project-47695a8e-7cb2-4352-af2
-  AR_LOCATION: us-central1
-  AR_REPOSITORY: banquito
-  GKE_CLUSTER: banquito-cluster-east
-  GKE_REGION: us-east1
-  IMAGE_NAME: web-personas-frontend
-  DEPLOYMENT_NAME: web-personas-frontend
-  CONTAINER_NAME: web-personas-frontend
-  NAMESPACE: banquito-frontend
-  VITE_ACCOUNT_API_BASE_URL: https://136.68.89.25.nip.io/api/v2
-  VITE_PARTY_API_BASE_URL: https://136.68.89.25.nip.io
-  VITE_SWITCH_API_BASE_URL: https://136.68.89.25.nip.io/api/v2
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/69503932816/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
-          service_account: github-actions-gke@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker $AR_LOCATION-docker.pkg.dev --quiet
-
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg VITE_ACCOUNT_API_BASE_URL=$VITE_ACCOUNT_API_BASE_URL \
-            --build-arg VITE_PARTY_API_BASE_URL=$VITE_PARTY_API_BASE_URL \
-            --build-arg VITE_SWITCH_API_BASE_URL=$VITE_SWITCH_API_BASE_URL \
-            -t $AR_LOCATION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:${{ github.sha }} \
-            -t $AR_LOCATION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:latest \
-            .
-
-      - name: Push Docker image
-        run: |
-          docker push $AR_LOCATION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:${{ github.sha }}
-          docker push $AR_LOCATION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:latest
-
-      - name: Get GKE credentials
-        uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: ${{ env.GKE_CLUSTER }}
-          location: ${{ env.GKE_REGION }}
-          project_id: ${{ env.PROJECT_ID }}
-
-      - name: Deploy image to GKE
-        run: |
-          kubectl set image deployment/$DEPLOYMENT_NAME \
-            $CONTAINER_NAME=$AR_LOCATION-docker.pkg.dev/$PROJECT_ID/$AR_REPOSITORY/$IMAGE_NAME:${{ github.sha }} \
-            -n $NAMESPACE
-
-      - name: Verify rollout
-        run: kubectl rollout status deployment/$DEPLOYMENT_NAME -n $NAMESPACE --timeout=180s
+```text
+Checkout
+  -> Authenticate to Google Cloud
+  -> Leer identity-platform-api-key desde Secret Manager
+  -> Leer API Key Apigee del frontend desde Secret Manager
+  -> npm ci
+  -> npm run build
+  -> tar dist
+  -> scp dist.tar.gz a la VM
+  -> descomprimir en /var/www/banquito/<frontend>
 ```
 
 ## Variables por frontend
 
-| Repositorio | IMAGE_NAME | DEPLOYMENT_NAME | CONTAINER_NAME | NAMESPACE |
-| --- | --- | --- | --- | --- |
-| `banquito-teller-frontend` | `teller-frontend` | `teller-frontend` | `teller-frontend` | `banquito-frontend` |
-| `banquito-web-personas-frontend` | `web-personas-frontend` | `web-personas-frontend` | `web-personas-frontend` | `banquito-frontend` |
-| `banquito-web-empresas-frontend` | `web-empresas-frontend` | `web-empresas-frontend` | `web-empresas-frontend` | `banquito-frontend` |
-| `banquito-frontend-web-operador` | `operador-frontend` | `operador-frontend` | `operador-frontend` | `banquito-frontend` |
+| Repositorio | Workflow | Ruta VM | Secret Apigee |
+| --- | --- | --- | --- |
+| `banquito-teller-frontend` | `deploy-vm.yml` | `/var/www/banquito/teller` | `app-teller` |
+| `banquito-web-personas-frontend` | `deploy-vm.yml` | `/var/www/banquito/personas` | `app-web-personas` |
+| `banquito-web-empresas-frontend` | `deploy-vm.yml` | `/var/www/banquito/empresas` | `app-web-empresas` |
+| `banquito-frontend-web-operador` | `deploy-vm.yml` | `/var/www/banquito/operador` | `app-operador` |
 
 ## Pipeline de infraestructura
 

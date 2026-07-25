@@ -2,94 +2,114 @@
 
 ## Objetivo
 
-Desplegar las cuatro aplicaciones web en GKE y configurarlas para consumir Apigee.
+Publicar las cuatro aplicaciones web fuera del cluster Kubernetes, usando una VM con Nginx como servidor de archivos estaticos.
 
-## Frontends desplegados
+Esta fase se ajusto porque los frontends no necesitan ejecutarse como Pods. El requisito de orquestador de contenedores se cumple con las dos aplicaciones backend principales: Core Bancario y Switch de Pagos Masivos, que si se ejecutan en GKE.
 
-| Frontend | Namespace | Deployment | Service | Puerto |
-| --- | --- | --- | --- | ---: |
-| Teller | `banquito-frontend` | `teller-frontend` | `teller-frontend` | 8080 |
-| Web Personas | `banquito-frontend` | `web-personas-frontend` | `web-personas-frontend` | 8080 |
-| Web Empresas | `banquito-frontend` | `web-empresas-frontend` | `web-empresas-frontend` | 8080 |
-| Operador | `banquito-frontend` | `operador-frontend` | `operador-frontend` | 8080 |
+## Decision arquitectonica
 
-## API Manager
+| Componente | Ubicacion final | Motivo |
+| --- | --- | --- |
+| Core Bancario | GKE Autopilot | Microservicios backend, comunicacion interna y escalamiento. |
+| Switch de Pagos Masivos | GKE Autopilot | Microservicios backend, Pub/Sub, procesamiento asincrono. |
+| Frontends | VM + Nginx | Son archivos estaticos generados por Vite; no requieren orquestacion. |
+| Apigee | Servicio cloud externo | API Manager, OAuth 2, API Keys, CORS y enrutamiento. |
 
-Dominio Apigee:
+## Flujo de comunicacion
 
 ```text
-https://136.68.89.25.nip.io
+Usuario
+  -> Frontend en VM/Nginx
+  -> Apigee API Manager
+  -> GKE Gateway
+  -> Service ClusterIP
+  -> Pod backend
 ```
 
-Variables Vite:
+Los frontends no llaman directamente a los Services internos de Kubernetes. Toda llamada a APIs protegidas debe pasar por Apigee.
+
+## Aplicaciones web
+
+| Frontend | Ruta recomendada en VM | API Key en Secret Manager |
+| --- | --- | --- |
+| Web Personas | `/var/www/banquito/personas` | `app-web-personas` |
+| Web Empresas | `/var/www/banquito/empresas` | `app-web-empresas` |
+| Teller | `/var/www/banquito/teller` | `app-teller` |
+| Operador | `/var/www/banquito/operador` | `app-operador` |
+
+## Variables usadas en build
+
+Los frontends son Vite, por lo que las variables `VITE_*` se resuelven durante el build.
 
 ```text
+VITE_API_BASE_URL=https://136.68.89.25.nip.io
 VITE_ACCOUNT_API_BASE_URL=https://136.68.89.25.nip.io/api/v2
 VITE_PARTY_API_BASE_URL=https://136.68.89.25.nip.io
 VITE_ACCOUNTING_API_BASE_URL=https://136.68.89.25.nip.io/api/v2
 VITE_SWITCH_API_BASE_URL=https://136.68.89.25.nip.io/api/v2
+VITE_IDENTITY_PLATFORM_API_KEY=<Secret Manager: identity-platform-api-key>
+VITE_APIGEE_API_KEY=<Secret Manager segun frontend>
 ```
 
-## Importante
+## CI/CD aplicado
 
-Vite resuelve `VITE_*` durante `docker build`. Si cambia Apigee, hay que reconstruir la imagen del frontend.
-
-## Aplicar frontends
-
-```powershell
-cd C:\Users\User\Desktop\KUBERNETS-PROYECTO\banquito-infra\k8s
-kubectl apply -f teller
-kubectl apply -f personas
-kubectl apply -f empresas
-kubectl apply -f operador
-```
-
-Levantar:
-
-```powershell
-kubectl scale deployment --all --replicas=1 -n banquito-frontend
-kubectl get pods -n banquito-frontend
-```
-
-## Reconstruir despues de cambiar Apigee
-
-Ejemplo:
-
-```powershell
-cd C:\Users\User\Desktop\KUBERNETS-PROYECTO\banquito-web-personas-frontend
-docker build -t us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/web-personas-frontend:latest .
-docker push us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/web-personas-frontend:latest
-kubectl rollout restart deployment/web-personas-frontend -n banquito-frontend
-```
-
-## Validacion completa 2026-07-20
-
-Se levantaron los cuatro frontends en `banquito-frontend` y se validaron por el Gateway publico unico.
-
-Resultado:
+Cada frontend tiene un workflow `deploy-vm.yml` que ejecuta:
 
 ```text
-operador-frontend        1/1 Running
-teller-frontend          1/1 Running
-web-empresas-frontend    1/1 Running
-web-personas-frontend    1/1 Running
+git push main
+  -> GitHub Actions
+  -> leer secretos desde Google Secret Manager
+  -> npm ci
+  -> npm run build
+  -> empaquetar dist
+  -> copiar dist a la VM por SSH/SCP
+  -> publicar con Nginx
 ```
 
-URLs validadas:
+Secretos requeridos en GitHub:
 
 ```text
-http://personas.8.233.141.65.nip.io
-http://operador.8.233.141.65.nip.io
-http://teller.8.233.141.65.nip.io
-http://empresas.8.233.141.65.nip.io
+VM_HOST
+VM_USER
+VM_SSH_KEY
+VM_PORT opcional
 ```
 
-Detalle completo:
+La cuenta `github-actions-gke@project-47695a8e-7cb2-4352-af2.iam.gserviceaccount.com` debe tener permiso `roles/secretmanager.secretAccessor` sobre los secretos de frontend.
+
+## Estado en Kubernetes
+
+Los manifiestos de frontend fueron retirados de la carpeta activa:
 
 ```text
-docs/kubernetes/anexo-n-validacion-completa-gke.md
+banquito-infra/k8s
 ```
+
+Quedaron archivados solo como evidencia historica:
+
+```text
+banquito-infra/k8s-archive/frontends-gke
+```
+
+Por tanto, al ejecutar:
+
+```powershell
+kubectl apply --recursive -f .\banquito-infra\k8s
+```
+
+Kubernetes ya no recrea Deployments, Services, HPA ni rutas de frontends.
+
+## Comandos de verificacion
+
+```powershell
+kubectl get deploy -A
+kubectl get svc -A
+kubectl get httproute -A
+kubectl get namespace banquito-frontend
+```
+
+Si `banquito-frontend` ya no existe, el frontend quedo fuera de GKE.
 
 ## Entregable
 
-Los cuatro frontends tienen Deployment y Service en `banquito-frontend`, y sus builds apuntan al dominio de Apigee.
+Los cuatro frontends se publican desde VM/Nginx y consumen APIs mediante Apigee. El cluster GKE queda reservado para Core Bancario, Switch de Pagos Masivos y el Gateway backend hacia Apigee.

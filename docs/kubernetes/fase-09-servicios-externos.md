@@ -1,4 +1,4 @@
-# FASE 9 - Integracion con servicios externos
+﻿# FASE 9 - Integracion con servicios externos
 
 ## Objetivo
 
@@ -350,7 +350,7 @@ kubectl scale deployment <deployment> --replicas=0 -n <namespace>
 | `tariff-service` | `banquito-switch` | MySQL `tariffdb` | `1/1 Running` |
 | `account-core-service` | `banquito-core` | PostgreSQL `banquito` | `1/1 Running` |
 | `accounting-service` | `banquito-core` | PostgreSQL `banquito` | `1/1 Running` |
-| `file-reception-service` | `banquito-switch` | MySQL `filedb`, MongoDB Atlas, RabbitMQ legacy | MySQL y MongoDB OK; RabbitMQ timeout antes de migrar a Pub/Sub |
+| `file-reception-service` | `banquito-switch` | MySQL `filedb`, MongoDB Atlas, Pub/Sub | MySQL, MongoDB y Pub/Sub como objetivo cloud |
 | `report-service` | `banquito-switch` | MongoDB Atlas | `1/1 Running` |
 
 ### Evidencia tecnica observada
@@ -416,7 +416,7 @@ La dependencia RabbitMQ ya no se mantiene como objetivo de arquitectura:
 RabbitMQ legacy -> reemplazo por Google Cloud Pub/Sub
 ```
 
-Mientras el codigo Java no se migre, los microservicios que aun contienen `RabbitTemplate` o `@RabbitListener` pueden seguir intentando conectar RabbitMQ. La infraestructura GKE ya esta preparada para Pub/Sub, pero falta reconstruir los microservicios con la nueva libreria y logica de Pub/Sub.
+El flujo principal del Switch ya queda orientado a Pub/Sub. La separacion final de responsabilidades queda documentada en `anexo-r-separacion-switch-pubsub.md`: recepcion, router publisher, subscriber ON-US/INVALID y subscriber OFF-US.
 
 Al finalizar la prueba, los backends quedaron apagados para evitar consumo:
 
@@ -428,3 +428,4 @@ banquito-switch: 0/0
 ## Entregable
 
 Microservicios conectados correctamente a servicios externos y Pods `Running/Ready`.
+
