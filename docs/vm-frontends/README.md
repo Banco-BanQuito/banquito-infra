@@ -237,6 +237,71 @@ No hace falta ejecutar `npm run dev` ni levantar procesos Node en la VM. Nginx s
 
 ## Validaciones importantes
 
+### Comandos dentro de la VM por SSH
+
+Cuando ya estes conectado a la VM por SSH, estos comandos permiten ubicar y revisar los frontends desplegados.
+
+Entrar al directorio base:
+
+```bash
+cd /var/www/banquito
+ls -la
+```
+
+Ver cada frontend:
+
+```bash
+ls -la /var/www/banquito/personas
+ls -la /var/www/banquito/empresas
+ls -la /var/www/banquito/teller
+ls -la /var/www/banquito/operador
+```
+
+Entrar a un frontend especifico:
+
+```bash
+cd /var/www/banquito/personas
+ls -la
+```
+
+Ver el `index.html` desplegado:
+
+```bash
+cat /var/www/banquito/personas/index.html
+cat /var/www/banquito/empresas/index.html
+cat /var/www/banquito/teller/index.html
+cat /var/www/banquito/operador/index.html
+```
+
+Ver la configuracion Nginx activa:
+
+```bash
+ls -la /etc/nginx/sites-enabled
+cat /etc/nginx/sites-enabled/nginx-banquito-frontends.conf
+```
+
+Ver si Nginx esta corriendo:
+
+```bash
+systemctl status nginx
+```
+
+Recargar Nginx si se cambia alguna configuracion:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Probar las URLs desde la misma VM:
+
+```bash
+curl http://personas.34.63.127.239.nip.io
+curl http://empresas.34.63.127.239.nip.io
+curl http://teller.34.63.127.239.nip.io
+curl http://operador.34.63.127.239.nip.io
+```
+
 ### Verificar que los frontends ya no estan en Kubernetes
 
 ```powershell
