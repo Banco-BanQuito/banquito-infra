@@ -50,8 +50,12 @@ Para este proyecto se acepta usar `Kubernetes Secret` solo como mecanismo de con
 | `banquito-rabbit-user` | Usuario RabbitMQ |
 | `banquito-rabbit-password` | Password RabbitMQ |
 | `banquito-jwt-secret` | Secreto JWT si aplica |
+| `banquito-smtp-host` | Host SMTP para envio de correos |
+| `banquito-smtp-port` | Puerto SMTP |
 | `banquito-smtp-user` | Usuario SMTP |
 | `banquito-smtp-password` | Password SMTP |
+| `banquito-smtp-from` | Remitente usado por Notification Service |
+| `banquito-smtp-enabled` | Bandera para activar o simular envio SMTP |
 
 ## Habilitar Secret Manager y el add-on de GKE
 
@@ -210,8 +214,105 @@ Se sincronizaron hacia Kubernetes Secrets separados por microservicio:
 | `banquito-switch` | `file-reception-secrets` | MySQL File + MongoDB |
 | `banquito-switch` | `tariff-secrets` | MySQL Tariff |
 | `banquito-switch` | `mongo-services-secrets` | MongoDB para Clearinghouse, Report y Notification |
+| `banquito-switch` | `notification-secrets` | Configuracion SMTP para Notification |
 
 Los Deployments fueron actualizados para dejar de depender del `banquito-secrets` generico en backends y usar el Secret especifico correspondiente.
+
+## Secretos SMTP para Notification Service
+
+Fecha de aplicacion: `2026-07-25`.
+
+Se valido que `notification-service` usa las siguientes variables:
+
+| Variable | Origen esperado | Uso |
+| --- | --- | --- |
+| `SMTP_HOST` | Secret Manager -> `notification-secrets` | Host del servidor SMTP |
+| `SMTP_PORT` | Secret Manager -> `notification-secrets` | Puerto SMTP |
+| `SMTP_USER` | Secret Manager -> `notification-secrets` | Usuario de autenticacion SMTP |
+| `SMTP_PASS` | Secret Manager -> `notification-secrets` | Password o app password SMTP |
+| `SMTP_FROM` | Secret Manager -> `notification-secrets` | Correo remitente |
+| `SMTP_ENABLED` | Secret Manager -> `notification-secrets` | Activa envio real o simulacion |
+
+Comportamiento del microservicio:
+
+| Estado | Resultado |
+| --- | --- |
+| `SMTP_ENABLED=false` | No envia correo real. Simula la notificacion y registra auditoria en MongoDB. |
+| `SMTP_ENABLED=true` | Usa `JavaMailSender` con las credenciales SMTP para enviar correo real. |
+
+Secretos creados en Google Secret Manager:
+
+```text
+banquito-smtp-host
+banquito-smtp-port
+banquito-smtp-user
+banquito-smtp-password
+banquito-smtp-from
+banquito-smtp-enabled
+```
+
+Sincronizacion aplicada hacia Kubernetes:
+
+```powershell
+$PROJECT_ID='project-47695a8e-7cb2-4352-af2'
+
+$SMTP_HOST = gcloud secrets versions access latest --secret=banquito-smtp-host --project $PROJECT_ID
+$SMTP_PORT = gcloud secrets versions access latest --secret=banquito-smtp-port --project $PROJECT_ID
+$SMTP_USER = gcloud secrets versions access latest --secret=banquito-smtp-user --project $PROJECT_ID
+$SMTP_PASS = gcloud secrets versions access latest --secret=banquito-smtp-password --project $PROJECT_ID
+$SMTP_FROM = gcloud secrets versions access latest --secret=banquito-smtp-from --project $PROJECT_ID
+$SMTP_ENABLED = gcloud secrets versions access latest --secret=banquito-smtp-enabled --project $PROJECT_ID
+
+kubectl --insecure-skip-tls-verify=true create secret generic notification-secrets `
+  -n banquito-switch `
+  --from-literal=SMTP_HOST=$SMTP_HOST `
+  --from-literal=SMTP_PORT=$SMTP_PORT `
+  --from-literal=SMTP_USER=$SMTP_USER `
+  --from-literal=SMTP_PASS=$SMTP_PASS `
+  --from-literal=SMTP_FROM=$SMTP_FROM `
+  --from-literal=SMTP_ENABLED=$SMTP_ENABLED `
+  --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify=true apply -f -
+```
+
+El Deployment `notification-service` fue actualizado para leer estas variables desde `notification-secrets`. El Secret `mongo-services-secrets` se mantiene separado porque Notification tambien usa MongoDB para auditoria.
+
+Validacion:
+
+```powershell
+kubectl --insecure-skip-tls-verify=true describe pod -n banquito-switch -l app=notification
+kubectl --insecure-skip-tls-verify=true logs -n banquito-switch deployment/notification-service --tail=160
+```
+
+Evidencia observada:
+
+```text
+Environment:
+  SMTP_HOST:    notification-secrets/SMTP_HOST
+  SMTP_PORT:    notification-secrets/SMTP_PORT
+  SMTP_USER:    notification-secrets/SMTP_USER
+  SMTP_PASS:    notification-secrets/SMTP_PASS
+  SMTP_FROM:    notification-secrets/SMTP_FROM
+  SMTP_ENABLED: notification-secrets/SMTP_ENABLED
+
+MongoDB Atlas connected
+gRPC Server started, listening on address: *, port: 9092
+Started NotificationServiceApplication
+Ready=True
+```
+
+Estado actual: SMTP queda parametrizado por Secret Manager y habilitado con Gmail SMTP.
+
+Valores no sensibles validados en el Pod:
+
+```text
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=notificacionbanquito@gmail.com
+SMTP_FROM=notificacionbanquito@gmail.com
+SMTP_ENABLED=true
+```
+
+El password SMTP se mantiene solo en Secret Manager y en el Kubernetes Secret sincronizado. No debe documentarse ni versionarse en Git.
 
 Despues de la prueba, los Deployments quedaron nuevamente en `0/0` para evitar consumo innecesario:
 

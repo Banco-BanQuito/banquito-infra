@@ -277,6 +277,98 @@ report-service            -> mongo-services-secrets
 notification-service      -> mongo-services-secrets
 ```
 
+### Notification Service y SMTP
+
+Fecha de aplicacion: `2026-07-25`.
+
+Se reviso `notification-service` y se confirmo su responsabilidad:
+
+| Responsabilidad | Detalle |
+| --- | --- |
+| Envio de notificaciones | Recibe solicitudes de notificacion por HTTP/gRPC y construye el mensaje. |
+| Auditoria | Registra en MongoDB el resultado de la notificacion. |
+| Modo simulacion | Si `SMTP_ENABLED=false`, no envia correo real; registra la notificacion como simulada/enviada para pruebas. |
+| Modo SMTP real | Si `SMTP_ENABLED=true`, usa `JavaMailSender` y las credenciales SMTP para enviar el correo. |
+
+Variables requeridas por el servicio:
+
+```text
+SMTP_HOST
+SMTP_PORT
+SMTP_USER
+SMTP_PASS
+SMTP_FROM
+SMTP_ENABLED
+```
+
+Estas variables ya no deben depender del `ConfigMap`, porque contienen credenciales o controlan integracion externa. Se crearon en Google Secret Manager:
+
+```text
+banquito-smtp-host
+banquito-smtp-port
+banquito-smtp-user
+banquito-smtp-password
+banquito-smtp-from
+banquito-smtp-enabled
+```
+
+Y se sincronizaron al namespace `banquito-switch` como:
+
+```text
+notification-secrets
+```
+
+El Deployment `notification-service` ahora consume:
+
+| Secret Kubernetes | Uso |
+| --- | --- |
+| `mongo-services-secrets` | URI MongoDB Atlas para auditoria |
+| `notification-secrets` | Configuracion SMTP |
+
+Comandos utilizados:
+
+```powershell
+$PROJECT_ID='project-47695a8e-7cb2-4352-af2'
+
+gcloud secrets list --project $PROJECT_ID --filter='name:banquito-smtp'
+
+$SMTP_HOST = gcloud secrets versions access latest --secret=banquito-smtp-host --project $PROJECT_ID
+$SMTP_PORT = gcloud secrets versions access latest --secret=banquito-smtp-port --project $PROJECT_ID
+$SMTP_USER = gcloud secrets versions access latest --secret=banquito-smtp-user --project $PROJECT_ID
+$SMTP_PASS = gcloud secrets versions access latest --secret=banquito-smtp-password --project $PROJECT_ID
+$SMTP_FROM = gcloud secrets versions access latest --secret=banquito-smtp-from --project $PROJECT_ID
+$SMTP_ENABLED = gcloud secrets versions access latest --secret=banquito-smtp-enabled --project $PROJECT_ID
+
+kubectl --insecure-skip-tls-verify=true create secret generic notification-secrets `
+  -n banquito-switch `
+  --from-literal=SMTP_HOST=$SMTP_HOST `
+  --from-literal=SMTP_PORT=$SMTP_PORT `
+  --from-literal=SMTP_USER=$SMTP_USER `
+  --from-literal=SMTP_PASS=$SMTP_PASS `
+  --from-literal=SMTP_FROM=$SMTP_FROM `
+  --from-literal=SMTP_ENABLED=$SMTP_ENABLED `
+  --dry-run=client -o yaml | kubectl --insecure-skip-tls-verify=true apply -f -
+
+kubectl --insecure-skip-tls-verify=true apply -f .\banquito-infra\k8s\notification\deployment.yaml
+kubectl --insecure-skip-tls-verify=true rollout restart deployment/notification-service -n banquito-switch
+kubectl --insecure-skip-tls-verify=true describe pod -n banquito-switch -l app=notification
+kubectl --insecure-skip-tls-verify=true logs -n banquito-switch deployment/notification-service --tail=160
+```
+
+Resultado validado:
+
+```text
+notification-service Ready=True
+MongoDB Atlas conectado
+gRPC Server iniciado en puerto 9092
+Variables SMTP tomadas desde notification-secrets
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=notificacionbanquito@gmail.com
+SMTP_FROM=notificacionbanquito@gmail.com
+SMTP_ENABLED=true
+```
+
 Se aplicaron los Deployments actualizados:
 
 ```powershell

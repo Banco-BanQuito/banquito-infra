@@ -33,6 +33,36 @@ spec:
               value: "9092"
             - name: GRPC_SERVER_PORT
               value: "9092"
+            - name: SMTP_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_HOST
+            - name: SMTP_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_PORT
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_USER
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_PASS
+            - name: SMTP_FROM
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_FROM
+            - name: SMTP_ENABLED
+              valueFrom:
+                secretKeyRef:
+                  name: notification-secrets
+                  key: SMTP_ENABLED
           envFrom:
             - configMapRef:
                 name: banquito-config

@@ -40,8 +40,9 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | [anexo-o-https-duckdns-gateway.md](anexo-o-https-duckdns-gateway.md) | Historico: HTTPS con DuckDNS cuando los frontends estaban en GKE Gateway |
 | [anexo-p-secret-manager-csi-party-service.md](anexo-p-secret-manager-csi-party-service.md) | Lectura de `identity-platform-api-key` desde Secret Manager para `party-service` con Secret Sync |
 | [anexo-q-validacion-identity-platform-party.md](anexo-q-validacion-identity-platform-party.md) | Validacion funcional de creacion de usuarios Identity Platform desde `party-service` |
-| [anexo-r-separacion-switch-pubsub.md](anexo-r-separacion-switch-pubsub.md) | Separacion de `file-reception-service`, router publisher y subscribers del Switch |
+| [anexo-r-separacion-switch-pubsub.md](anexo-r-separacion-switch-pubsub.md) | Separacion logica del Switch: recepcion, clasificacion, publicacion, Pub/Sub y subscriber |
 | [anexo-s-frontends-vm-cicd.md](anexo-s-frontends-vm-cicd.md) | Frontends fuera de GKE, servidos por VM/Nginx y desplegados con GitHub Actions |
+| [anexo-t-gke-standard-backends-vm-frontends.md](anexo-t-gke-standard-backends-vm-frontends.md) | Opcion de migracion a GKE Standard solo para backends, manteniendo frontends en VM |
 
 ## Estado actual resumido
 

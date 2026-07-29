@@ -24,6 +24,17 @@ kubectl rollout restart deployment/account-core-service -n banquito-core
 kubectl rollout status deployment/account-core-service -n banquito-core
 ```
 
+Ejemplo Payment Line Publisher:
+
+```powershell
+cd C:\Users\User\Desktop\KUBERNETS-PROYECTO\banquito-payment-line-publisher-service
+.\mvnw.cmd -q -DskipTests package
+docker build -t us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-publisher-service:latest .
+docker push us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-publisher-service:latest
+kubectl rollout restart deployment/payment-line-publisher-service -n banquito-switch
+kubectl rollout status deployment/payment-line-publisher-service -n banquito-switch
+```
+
 ## Frontend
 
 Patron:
@@ -99,6 +110,9 @@ Switch:
 
 ```powershell
 kubectl scale deployment file-reception-service --replicas=1 -n banquito-switch
+kubectl scale deployment payment-line-classifier-service --replicas=1 -n banquito-switch
+kubectl scale deployment payment-line-publisher-service --replicas=1 -n banquito-switch
+kubectl scale deployment payment-line-subscriber-service --replicas=1 -n banquito-switch
 kubectl scale deployment clearinghouse-service --replicas=1 -n banquito-switch
 kubectl scale deployment tariff-service --replicas=1 -n banquito-switch
 kubectl scale deployment report-service --replicas=1 -n banquito-switch
@@ -125,13 +139,19 @@ kubectl scale deployment account-core-service accounting-service party-service -
 Switch completo:
 
 ```powershell
-kubectl scale deployment file-reception-service clearinghouse-service tariff-service report-service notification-service --replicas=1 -n banquito-switch
+kubectl scale deployment file-reception-service payment-line-classifier-service payment-line-publisher-service payment-line-subscriber-service clearinghouse-service tariff-service report-service notification-service --replicas=1 -n banquito-switch
 ```
 
-Switch por bloque de procesamiento:
+Switch por bloque de ingesta, clasificacion y broker:
 
 ```powershell
-kubectl scale deployment file-reception-service clearinghouse-service --replicas=1 -n banquito-switch
+kubectl scale deployment file-reception-service payment-line-classifier-service payment-line-publisher-service payment-line-subscriber-service --replicas=1 -n banquito-switch
+```
+
+Switch por bloque de compensacion:
+
+```powershell
+kubectl scale deployment clearinghouse-service --replicas=1 -n banquito-switch
 ```
 
 Switch por bloque secundario:
@@ -157,7 +177,7 @@ kubectl scale deployment account-core-service accounting-service party-service -
 Switch completo:
 
 ```powershell
-kubectl scale deployment file-reception-service clearinghouse-service tariff-service report-service notification-service --replicas=0 -n banquito-switch
+kubectl scale deployment file-reception-service payment-line-classifier-service payment-line-publisher-service payment-line-subscriber-service clearinghouse-service tariff-service report-service notification-service --replicas=0 -n banquito-switch
 ```
 
 Frontends completos:
@@ -180,6 +200,9 @@ Switch:
 
 ```powershell
 kubectl scale deployment file-reception-service --replicas=0 -n banquito-switch
+kubectl scale deployment payment-line-classifier-service --replicas=0 -n banquito-switch
+kubectl scale deployment payment-line-publisher-service --replicas=0 -n banquito-switch
+kubectl scale deployment payment-line-subscriber-service --replicas=0 -n banquito-switch
 kubectl scale deployment clearinghouse-service --replicas=0 -n banquito-switch
 kubectl scale deployment tariff-service --replicas=0 -n banquito-switch
 kubectl scale deployment report-service --replicas=0 -n banquito-switch
@@ -279,4 +302,41 @@ Ver consumo de pods del Switch ordenado por CPU:
 
 ```powershell
 kubectl top pods -n banquito-switch --sort-by=cpu
+```
+
+## Probar comunicacion interna de Clearing OFF-US
+
+El flujo principal entre `payment-line-subscriber-service` y `clearinghouse-service` usa gRPC por el puerto `9094`.
+
+Verificar que el Service expone HTTP y gRPC:
+
+```powershell
+kubectl get svc clearinghouse-service -n banquito-switch
+```
+
+Ver logs del servidor gRPC de clearing:
+
+```powershell
+kubectl logs -n banquito-switch deployment/clearinghouse-service --since=10m
+```
+
+Levantar un `port-forward` local hacia el puerto gRPC:
+
+```powershell
+kubectl port-forward svc/clearinghouse-service 9094:9094 -n banquito-switch
+```
+
+En otra terminal, con `grpcurl` instalado, probar el contrato interno:
+
+```powershell
+grpcurl -plaintext `
+  -d "{\"batch_id\":\"00000000-0000-0000-0000-000000000001\",\"transaction_id\":\"00000000-0000-0000-0000-000000000002\",\"routing_code\":\"002\",\"origin_account\":\"1010114999\",\"destination_account\":\"2014146881\",\"amount\":\"10.50\",\"currency\":\"USD\",\"concept\":\"Prueba OFF-US\",\"value_date\":\"2026-07-28\"}" `
+  localhost:9094 `
+  banquito.clearing.v2.ClearingService/RegisterOffUsPayment
+```
+
+Ver logs de clearing:
+
+```powershell
+kubectl logs -n banquito-switch deployment/clearinghouse-service --since=10m
 ```

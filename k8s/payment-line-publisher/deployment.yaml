@@ -1,56 +1,42 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: payment-line-subscriber-service
+  name: payment-line-publisher-service
   namespace: banquito-switch
   labels:
-    app: payment-line-subscriber
+    app: payment-line-publisher
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: payment-line-subscriber
+      app: payment-line-publisher
   template:
     metadata:
       labels:
-        app: payment-line-subscriber
+        app: payment-line-publisher
     spec:
       serviceAccountName: file-reception-pubsub-ksa
       containers:
-        - name: payment-line-subscriber-service
-          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-subscriber-service:latest
+        - name: payment-line-publisher-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-publisher-service:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8091
+              containerPort: 8092
           env:
             - name: SERVER_PORT
-              value: "8091"
+              value: "8092"
             - name: SPRING_APPLICATION_NAME
-              value: banquito-payment-line-subscriber-service
-            - name: DB_URL
-              value: "jdbc:mysql://136.111.132.119:3306/filedb"
-            - name: DB_USER
-              value: root
+              value: banquito-payment-line-publisher-service
             - name: APP_EMBEDDED_ROUTER_ENABLED
               value: "false"
+            - name: APP_PAYMENT_LINE_CLASSIFIER_POLL_ENABLED
+              value: "false"
+            - name: APP_PAYMENT_LINE_PUBLISHER_POLL_ENABLED
+              value: "true"
             - name: APP_DISPATCH_ENABLED
-              value: "true"
-            - name: APP_DISPATCH_ONUS_ENABLED
-              value: "true"
-            - name: APP_DISPATCH_OFFUS_ENABLED
-              value: "true"
-            - name: APP_DISPATCH_INVALID_ENABLED
-              value: "true"
-            - name: CLEARINGHOUSE_GRPC_HOST
-              value: "clearinghouse-service.banquito-switch.svc.cluster.local"
-            - name: CLEARINGHOUSE_GRPC_PORT
-              value: "9094"
-            - name: CLEARINGHOUSE_DIRECT_DELEGATION_ENABLED
-              value: "true"
-            - name: CLEARING_PUBSUB_FALLBACK_ENABLED
               value: "false"
           envFrom:
             - configMapRef:
@@ -80,4 +66,3 @@ spec:
             limits:
               cpu: 500m
               memory: 768Mi
-
