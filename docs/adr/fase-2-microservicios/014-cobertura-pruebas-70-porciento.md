@@ -8,7 +8,7 @@
 Se usan JUnit 5 y Mockito, con pruebas solo en Controllers y Services. Los repositorios quedan fuera del requisito de cobertura.
 
 ## Contexto
-Esta fase pide, por primera vez en el proyecto, pruebas unitarias con al menos 70% de cobertura, aplicadas solo a Controllers y Services — a diferencia de la Fase 1, donde no había ningún requisito formal de pruebas.
+Esta fase pide, por primera vez en el proyecto, pruebas unitarias con al menos 70% de cobertura, aplicadas solo a Controllers y Services — eso es un requisito del curso, no una decisión del equipo. Lo que sí fue decisión del equipo es cómo llegar a ese número: con qué tipo de prueba y con qué herramienta.
 
 ## Opciones consideradas
 1. **(SELECCIONADA) Pruebas unitarias con Mockito (simulando las dependencias):** rápidas de escribir, no necesitan una base de datos real corriendo.

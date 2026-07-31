@@ -10,7 +10,7 @@ El requisito académico exige usar tanto bases relacionales como documentales, e
 
 | Servicio | Motor | Razón |
 |---|---|---|
-| account-core-service | PostgreSQL | Necesita reglas estrictas de consistencia sobre los saldos — que una transacción quede completa o no quede registrada en absoluto — y permite separar más adelante los datos recientes de los históricos (ver ADR-006). |
+| account-core-service | PostgreSQL | Necesita reglas estrictas de consistencia sobre los saldos — que una transacción quede completa o no quede registrada en absoluto. |
 | accounting-service | PostgreSQL | El libro mayor y los asientos de partida doble exigen el mismo nivel de consistencia que el Core; usa el mismo motor, pero en su propio espacio separado, sin compartir tablas con account-core-service. |
 | party-service | MySQL | Datos maestros como clientes y sucursales, con relaciones simples; MySQL es suficiente y más liviano de operar para este caso. |
 | file-reception-service | MySQL y MongoDB | MySQL para el registro general del lote (cabecera, pie, auditoría); MongoDB para el detalle de cada línea de pago, que cambia de forma según el tipo de archivo (nómina, proveedores, etc.). |

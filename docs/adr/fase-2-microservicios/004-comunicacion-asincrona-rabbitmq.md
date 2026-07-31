@@ -18,6 +18,6 @@ Publicar directo a una cola por nombre funciona, pero es un modelo de "un public
 
 ## Consecuencias
 - A favor: el Switch responde de inmediato al subir un archivo, con un código de éxito, antes de que termine el procesamiento real — el procesamiento ocurre después, fuera de esa misma petición.
-- A favor: un fallo temporal en el Core (ver ADR-009) no tira el archivo completo — cada línea fallida se reporta individualmente sin afectar a las demás.
+- A favor: un fallo temporal en el Core (ver ADR-009 de Fase 1) no tira el archivo completo — cada línea fallida se reporta individualmente sin afectar a las demás.
 - A favor: el modelo permite agregar más consumidores sin tocar el código del que publica.
 - En contra: requiere operar RabbitMQ como una pieza más de infraestructura — actualmente corre como un contenedor en la misma máquina virtual, no como un servicio administrado por un proveedor de nube (ver la limitación documentada más adelante en el bloque de infraestructura).

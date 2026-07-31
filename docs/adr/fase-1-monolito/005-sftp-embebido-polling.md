@@ -8,7 +8,7 @@
 Se levanta un servidor SFTP (el protocolo para subir archivos por internet de forma segura) dentro del propio proceso del Switch, revisando cada cierto tiempo si hay archivos nuevos, y usando las mismas credenciales del portal web para autenticar al cliente.
 
 ## Contexto
-Una empresa cliente debe poder dejar su archivo de nómina en un buzón sin tener el portal web abierto, incluso fuera de horario laboral — el canal debe funcionar solo, sin que nadie esté conectado.
+El documento de requisitos del Switch (V1) ya exige que el canal SFTP exista, como segunda vía de carga junto al portal web — eso no fue una decisión del equipo. Lo que sí quedó abierto fue cómo construir ese servidor SFTP: una empresa cliente debe poder dejar su archivo de nómina en el buzón sin tener el portal web abierto, incluso fuera de horario laboral, y el equipo decidió cómo lograr eso.
 
 ## Opciones consideradas
 1. **(SELECCIONADA) Servidor SFTP dentro del mismo proceso, revisando la carpeta cada cierto tiempo:** el propio proceso del Switch corre el servidor SFTP y revisa la carpeta de archivos cada cierto tiempo.

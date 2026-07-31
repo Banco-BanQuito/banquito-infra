@@ -8,7 +8,7 @@
 Ambos backends envían correos por Gmail. El Switch lo hace en segundo plano, sin que el usuario espere. El Core lo hace dentro de la misma operación, así que el usuario sí espera a que el correo se envíe.
 
 ## Contexto
-El Core notifica al completar una transacción manual desde la intranet. El Switch notifica al terminar de procesar un lote completo.
+El documento de requisitos del Switch (V1) ya exige notificar por correo al beneficiario apenas se acredita su pago — eso no fue una decisión del equipo, fue un requisito explícito (RF-05). Que esa notificación sea o no bloqueante para el usuario sí quedó abierto. Notificar también las transacciones manuales del Core no está pedido en ningún documento — esa parte es enteramente decisión del equipo.
 
 ## Opciones consideradas
 1. **(SELECCIONADA, distinta en cada uno) Correo dentro del flujo normal en el Core, correo en segundo plano en el Switch.**
