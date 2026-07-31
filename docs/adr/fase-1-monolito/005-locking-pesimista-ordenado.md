@@ -1,4 +1,4 @@
-# ADR-008 (Fase 1): Bloqueo pesimista ordenado para transferencias
+# ADR-005 (Fase 1): Bloqueo pesimista ordenado para transferencias
 
 **Estado:** Aceptado — sigue vigente en Fase 2 y Fase 3
 **Fecha:** Mayo 2026

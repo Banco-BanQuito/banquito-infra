@@ -1,4 +1,4 @@
-# ADR-013 (Fase 1): Notificaciones por correo — asíncronas en el Switch, bloqueantes en el Core
+# ADR-010 (Fase 1): Notificaciones por correo — asíncronas en el Switch, bloqueantes en el Core
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026
@@ -17,7 +17,7 @@ El documento de requisitos del Switch (V1) ya exige notificar por correo al bene
 ## Compensaciones
 
 **Opción 1 (SELECCIONADA) — Cada backend a su manera**
-- En el Switch, el envío de correo queda dentro del procesamiento del lote, que ya corre en segundo plano (ver ADR-009) — el usuario nunca espera por el correo.
+- En el Switch, el envío de correo queda dentro del procesamiento del lote, que ya corre en segundo plano (ver ADR-006) — el usuario nunca espera por el correo.
 - En el Core, el correo se manda dentro de la misma operación bancaria, así que el operador espera a que el correo se envíe antes de ver la confirmación — hasta 8 segundos extra en el peor caso.
 - El Core ya tenía preparado el mecanismo para mandar cosas en segundo plano, pero nunca se conectó al envío de correo — quedó a medio hacer.
 

@@ -1,4 +1,4 @@
-# ADR-011: Eliminación de routing-service, el Exchange de RabbitMQ hace el ruteo
+# ADR-008: Eliminación de routing-service, el Exchange de RabbitMQ hace el ruteo
 
 ## Estado
 Aceptado

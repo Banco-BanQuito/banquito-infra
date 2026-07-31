@@ -1,4 +1,4 @@
-# ADR-007: Watchtower para actualizar automáticamente los contenedores
+# ADR-006: Watchtower para actualizar automáticamente los contenedores
 
 ## Estado
 Aceptado

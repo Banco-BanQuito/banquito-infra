@@ -1,6 +1,6 @@
 # ADR-002 (Fase 3): Migración de Docker Compose a Kubernetes (GKE)
 
-**Estado:** En progreso — reemplaza al ADR-007 de Fase 2
+**Estado:** En progreso — reemplaza al ADR-006 de Fase 2
 **Fecha:** Julio 2026
 **Autor:** Equipo Fase 3
 

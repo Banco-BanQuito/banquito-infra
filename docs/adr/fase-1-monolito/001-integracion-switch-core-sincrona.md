@@ -1,4 +1,4 @@
-# ADR-003 (Fase 1): Cliente HTTP y tiempos de espera para la integración Switch → Core
+# ADR-001 (Fase 1): Cliente HTTP y tiempos de espera para la integración Switch → Core
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

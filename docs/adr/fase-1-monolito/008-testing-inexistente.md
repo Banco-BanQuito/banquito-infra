@@ -1,4 +1,4 @@
-# ADR-011 (Fase 1): Sin pruebas automatizadas en esta fase
+# ADR-008 (Fase 1): Sin pruebas automatizadas en esta fase
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

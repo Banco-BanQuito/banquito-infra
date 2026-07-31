@@ -1,4 +1,4 @@
-# ADR-012 (Fase 2): Redes Docker separadas entre Core y Switch
+# ADR-009 (Fase 2): Redes Docker separadas entre Core y Switch
 
 **Estado:** Aceptado
 **Fecha:** Junio 2026

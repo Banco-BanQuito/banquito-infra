@@ -1,4 +1,4 @@
-# ADR-012 (Fase 1): Manejo de errores centralizado por servicio
+# ADR-009 (Fase 1): Manejo de errores centralizado por servicio
 
 **Estado:** Aceptado — sigue vigente en Fase 2
 **Fecha:** Mayo 2026

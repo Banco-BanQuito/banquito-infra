@@ -1,4 +1,4 @@
-# ADR-005 (Fase 1): Servidor SFTP embebido con detección por polling
+# ADR-002 (Fase 1): Servidor SFTP embebido con detección por polling
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

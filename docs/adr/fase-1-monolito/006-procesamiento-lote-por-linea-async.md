@@ -1,4 +1,4 @@
-# ADR-009 (Fase 1): Procesamiento del lote en segundo plano, con recuperación automática
+# ADR-006 (Fase 1): Procesamiento del lote en segundo plano, con recuperación automática
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

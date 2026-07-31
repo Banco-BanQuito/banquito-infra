@@ -1,6 +1,6 @@
-# ADR-014 (Fase 2): Pruebas unitarias con 70% de cobertura, solo en Controllers y Services
+# ADR-011 (Fase 2): Pruebas unitarias con 70% de cobertura, solo en Controllers y Services
 
-**Estado:** Aceptado — reemplaza al ADR-011 de Fase 1 (sin pruebas)
+**Estado:** Aceptado — reemplaza al ADR-008 de Fase 1 (sin pruebas)
 **Fecha:** Junio 2026
 **Autor:** Equipo Fase 2
 

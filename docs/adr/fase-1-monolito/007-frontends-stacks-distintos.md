@@ -1,4 +1,4 @@
-# ADR-010 (Fase 1): Cada frontend con su propio stack tecnológico
+# ADR-007 (Fase 1): Cada frontend con su propio stack tecnológico
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

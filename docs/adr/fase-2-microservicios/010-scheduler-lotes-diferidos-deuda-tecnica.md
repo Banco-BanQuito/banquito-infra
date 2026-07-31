@@ -1,4 +1,4 @@
-# ADR-013 (Fase 2): Aviso — el reloj de lotes diferidos no sobrevive a un reinicio
+# ADR-010 (Fase 2): Aviso — el reloj de lotes diferidos no sobrevive a un reinicio
 
 **Estado:** Aceptado con reserva — deuda técnica conocida, todavía sin resolver
 **Fecha:** Junio 2026

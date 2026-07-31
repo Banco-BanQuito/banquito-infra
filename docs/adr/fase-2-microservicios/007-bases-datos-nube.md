@@ -1,10 +1,10 @@
-# ADR-008: Bases de datos administradas por un proveedor de nube
+# ADR-007: Una instancia compartida por motor, con espacios lógicos separados
 
 ## Estado
 Aceptado
 
 ## Contexto
-El enunciado exige que la base de datos de producción esté contratada como servicio en la nube, no auto-hospedada en la misma VM que corre la aplicación.
+Que la base de datos de producción fuera un servicio en la nube (no auto-hospedada en la misma VM) fue una instrucción del profesor, no una decisión del equipo. Lo que sí quedó abierto fue cómo repartir 8 microservicios entre esas bases sin pasarse del presupuesto de un proyecto académico, y esa es la decisión que documenta este ADR.
 
 ## Decisión
 - PostgreSQL (account-core-service, accounting-service): Cloud SQL de Google Cloud, una sola instancia con dos espacios separados dentro de ella, para mantener cada servicio con su propia base a nivel lógico sin pagar por dos instancias físicas completas.

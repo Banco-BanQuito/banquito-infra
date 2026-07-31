@@ -9,7 +9,7 @@ El proyecto exige usar gRPC (una forma de comunicación más rápida y compacta 
 ## Decisión
 - **Dentro del mismo dominio**: toda comunicación que espera respuesta usa gRPC.
   - Core: account-core-service se comunica con accounting-service y con party-service.
-  - Switch: file-reception-service se comunica con tariff-service y con notification-service (ver ADR-011: el despacho de pagos, antes pensado como un servicio de ruteo aparte, ahora vive en file-reception-service).
+  - Switch: file-reception-service se comunica con tariff-service y con notification-service (ver ADR-008: el despacho de pagos, antes pensado como un servicio de ruteo aparte, ahora vive en file-reception-service).
 - **Al cruzar de un dominio a otro**: se usa REST, el estilo normal de API por HTTP, tratando al otro dominio como si fuera un sistema externo.
   - file-reception-service (Switch) llama a account-core-service (Core) por REST.
   - clearinghouse-service (Switch) llama a accounting-service (Core) por REST.

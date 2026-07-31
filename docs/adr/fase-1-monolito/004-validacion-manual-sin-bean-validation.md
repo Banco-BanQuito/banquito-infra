@@ -1,4 +1,4 @@
-# ADR-007 (Fase 1): Validación de negocio escrita a mano en el servicio
+# ADR-004 (Fase 1): Validación de negocio escrita a mano en el servicio
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026
