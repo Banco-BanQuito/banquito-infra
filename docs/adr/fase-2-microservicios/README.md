@@ -5,7 +5,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | ADR | Título |
 |---|---|
 | [001](001-microservicios-y-dominios.md) | Por qué 8 microservicios específicos, y no solo el mínimo pedido |
-| [002](002-persistencia-poliglota.md) | Persistencia políglota: PostgreSQL, MySQL y MongoDB |
+| [002](002-persistencia-poliglota.md) | Qué motor le toca a cada microservicio |
 | [003](003-comunicacion-sincrona-grpc-rest.md) | Reservar REST solo para cruzar de dominio, gRPC para todo lo demás |
 | [004](004-comunicacion-asincrona-rabbitmq.md) | Exchange con Routing Key para el modelo Publicador-Suscriptor |
 | [005](005-api-gateway-kong.md) | API Gateway con Kong |
@@ -16,6 +16,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | [010](010-scheduler-lotes-diferidos-deuda-tecnica.md) | Aviso — el reloj de lotes diferidos no sobrevive a un reinicio |
 
 > **Nota:** se revisó cada ADR contra los 4 documentos de requisitos reales (Core V1, Switch V1, Core V2, Switch V2) y contra lo que el profesor indicó directamente en clase. Donde una parte de la decisión ya venía dada, el ADR se dejó enfocado solo en la parte que sí fue decisión real del equipo:
+> - **ADR-002:** que hubiera bases relacionales y documentales a la vez fue requisito académico. La decisión real es cuál microservicio usa cuál motor, y por qué dos motores relacionales (Postgres y MySQL) en vez de uno solo.
 > - **ADR-003:** que las llamadas entre microservicios fueran por gRPC fue instrucción general del proyecto. La decisión real es no seguir esa regla en un solo caso: usar REST específicamente al cruzar de dominio.
 > - **ADR-004:** que el broker fuera RabbitMQ (Kafka no permitido) y el modelo Publicador-Suscriptor, fue instrucción directa del profesor. La decisión real es el diseño de Exchange y Routing Key.
 > - **ADR-006:** que el despliegue fuera con Docker Compose fue instrucción directa del profesor. La decisión real es usar Watchtower para actualizar sin acceso manual a la VM.
