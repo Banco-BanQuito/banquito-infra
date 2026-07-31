@@ -9,7 +9,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | [003](003-comunicacion-sincrona-grpc-rest.md) | gRPC dentro de cada dominio, REST al cruzar de dominio |
 | [004](004-comunicacion-asincrona-rabbitmq.md) | Mensajería asíncrona con RabbitMQ |
 | [005](005-api-gateway-kong.md) | API Gateway con Kong |
-| [007](007-despliegue-docker-compose.md) | Orquestación con Docker Compose y actualización continua con Watchtower |
+| [007](007-despliegue-docker-compose.md) | Watchtower para actualizar automáticamente los contenedores |
 | [008](008-bases-datos-nube.md) | Bases de datos administradas por un proveedor de nube |
 | [011](011-eliminacion-routing-service.md) | Eliminación del servicio de ruteo — RabbitMQ hace el ruteo directamente |
 | [012](012-redes-docker-separadas.md) | Redes Docker separadas entre Core y Switch |
@@ -17,3 +17,5 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | [014](014-cobertura-pruebas-70-porciento.md) | Pruebas unitarias con 70% de cobertura, solo en Controllers y Services |
 
 > **Nota:** los números 006, 009 y 010 existieron en un borrador anterior y se eliminaron. Documentaban el particionamiento de PostgreSQL, la transacción compensatoria entre account-core-service y accounting-service, y la idempotencia por identificador único — las tres cosas están descritas casi palabra por palabra en el documento de requisitos del Core V2 (RF-01, RF-05 y Anexo 2), y la idempotencia ya estaba pedida desde el Core V1. No fueron decisiones del equipo, fueron requisitos explícitos, así que no califican como ADR.
+>
+> El ADR-001 se reenfocó y el 007 también: usar Docker Compose fue instrucción directa del profesor, así que el ADR ya no argumenta "por qué Docker Compose", solo documenta la decisión real (Watchtower para actualizar sin acceso manual a la VM).

@@ -1,6 +1,6 @@
 # ADR-001 (Fase 3): Google Identity Platform como OAuth2 en la nube
 
-**Estado:** Aceptado — reemplaza al ADR-004 de Fase 1
+**Estado:** Aceptado — reemplaza la autenticación propia sin token de Fase 1
 **Fecha:** Julio 2026
 **Autor:** Anahy Herrera
 
