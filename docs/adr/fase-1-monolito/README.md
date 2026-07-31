@@ -8,7 +8,7 @@ Decisiones de arquitectura del Core Bancario y el Switch de Pagos Masivos, como 
 | [002](002-validacion-manual-sin-bean-validation.md) | Validación imperativa en el servicio, sin Bean Validation declarativa |
 | [003](003-locking-pesimista-ordenado.md) | Bloqueo pesimista ordenado para transferencias |
 | [004](004-procesamiento-lote-por-linea-async.md) | Procesamiento del lote en segundo plano, con recuperación automática |
-| [005](005-frontends-stacks-distintos.md) | Frontend del Core con React, frontend del Switch sin framework |
+| [005](005-frontends-stacks-distintos.md) | Frontends construidos de forma independiente |
 | [006](006-notificaciones-smtp-sync-async.md) | Dos notificaciones independientes por correo — no un mensaje duplicado |
 
 Varias de estas decisiones se reemplazaron en fases posteriores — cada ADR dice en su encabezado (Estado) si sigue vigente o qué ADR de una fase posterior la reemplazó.
