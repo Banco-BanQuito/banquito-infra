@@ -1,10 +1,10 @@
-# ADR-003: gRPC intra-dominio, REST al cruzar dominios
+# ADR-003: Reservar REST solo para cruzar de dominio, gRPC para todo lo demás
 
 ## Estado
 Aceptado
 
 ## Contexto
-El proyecto exige usar gRPC (una forma de comunicación más rápida y compacta que el HTTP normal) para las llamadas entre microservicios, pero el sistema tiene dos dominios (Core y Switch) que deben poder cambiar cada uno por su lado sin depender de los detalles internos del otro.
+Que las llamadas entre microservicios fueran por gRPC (una forma de comunicación más rápida y compacta que el HTTP normal) fue una instrucción general del proyecto, no una decisión del equipo — de hecho, para la única llamada que el documento de requisitos describe con detalle (Cuentas hacia Contabilidad), el documento da a elegir entre REST o gRPC, tratándolos como intercambiables. Lo que sí fue decisión del equipo fue no usar gRPC en todos lados como el proyecto pedía en general: se reservó REST específicamente para las llamadas que cruzan de un dominio a otro (Core y Switch), tratando esa frontera distinto al resto.
 
 ## Decisión
 - **Dentro del mismo dominio**: toda comunicación que espera respuesta usa gRPC.

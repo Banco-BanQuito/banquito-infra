@@ -6,7 +6,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 |---|---|
 | [001](001-microservicios-y-dominios.md) | Por qué 8 microservicios específicos, y no solo el mínimo pedido |
 | [002](002-persistencia-poliglota.md) | Persistencia políglota: PostgreSQL, MySQL y MongoDB |
-| [003](003-comunicacion-sincrona-grpc-rest.md) | gRPC dentro de cada dominio, REST al cruzar de dominio |
+| [003](003-comunicacion-sincrona-grpc-rest.md) | Reservar REST solo para cruzar de dominio, gRPC para todo lo demás |
 | [004](004-comunicacion-asincrona-rabbitmq.md) | Exchange con Routing Key para el modelo Publicador-Suscriptor |
 | [005](005-api-gateway-kong.md) | API Gateway con Kong |
 | [006](006-watchtower-actualizacion-automatica.md) | Watchtower para actualizar automáticamente los contenedores |
@@ -17,6 +17,7 @@ Este directorio documenta las decisiones de arquitectura tomadas durante la evol
 | [011](011-cobertura-pruebas-70-porciento.md) | Pruebas unitarias con 70% de cobertura, solo en Controllers y Services |
 
 > **Nota:** se revisó cada ADR contra los 4 documentos de requisitos reales (Core V1, Switch V1, Core V2, Switch V2) y contra lo que el profesor indicó directamente en clase. Donde una parte de la decisión ya venía dada, el ADR se dejó enfocado solo en la parte que sí fue decisión real del equipo:
+> - **ADR-003:** que las llamadas entre microservicios fueran por gRPC fue instrucción general del proyecto. La decisión real es no seguir esa regla en un solo caso: usar REST específicamente al cruzar de dominio.
 > - **ADR-004:** que el broker fuera RabbitMQ (Kafka no permitido) y el modelo Publicador-Suscriptor, fue instrucción directa del profesor. La decisión real es el diseño de Exchange y Routing Key.
 > - **ADR-006:** que el despliegue fuera con Docker Compose fue instrucción directa del profesor. La decisión real es usar Watchtower para actualizar sin acceso manual a la VM.
 > - **ADR-007:** que la base de datos de producción fuera un servicio en la nube fue instrucción del profesor. La decisión real es repartir 8 microservicios en instancias compartidas con espacios lógicos separados, para no pasarse del presupuesto.

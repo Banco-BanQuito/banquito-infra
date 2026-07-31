@@ -7,13 +7,13 @@ Decisiones de arquitectura del Core Bancario y el Switch de Pagos Masivos, como 
 | [001](001-integracion-switch-core-sincrona.md) | Cliente HTTP y tiempos de espera para la integración Switch → Core |
 | [002](002-sftp-embebido-polling.md) | Servidor SFTP embebido con detección por polling |
 | [003](003-despliegue-vm-systemd.md) | systemd como gestor de procesos en la VM |
-| [004](004-validacion-manual-sin-bean-validation.md) | Validación de negocio escrita a mano en el servicio |
+| [004](004-validacion-manual-sin-bean-validation.md) | Validación imperativa en el servicio, sin Bean Validation declarativa |
 | [005](005-locking-pesimista-ordenado.md) | Bloqueo pesimista ordenado para transferencias |
 | [006](006-procesamiento-lote-por-linea-async.md) | Procesamiento del lote en segundo plano, con recuperación automática |
-| [007](007-frontends-stacks-distintos.md) | Cada frontend con su propio stack tecnológico |
+| [007](007-frontends-stacks-distintos.md) | Frontend del Core con React, frontend del Switch sin framework |
 | [008](008-testing-inexistente.md) | Sin pruebas automatizadas en esta fase |
 | [009](009-manejo-errores-restcontrolleradvice.md) | Manejo de errores centralizado por servicio |
-| [010](010-notificaciones-smtp-sync-async.md) | Notificaciones por correo — asíncronas en el Switch, bloqueantes en el Core |
+| [010](010-notificaciones-smtp-sync-async.md) | Dos notificaciones independientes por correo — no un mensaje duplicado |
 
 Varias de estas decisiones se reemplazaron en fases posteriores — cada ADR dice en su encabezado (Estado) si sigue vigente o qué ADR de una fase posterior la reemplazó.
 
