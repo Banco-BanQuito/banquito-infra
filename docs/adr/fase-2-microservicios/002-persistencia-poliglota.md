@@ -4,7 +4,10 @@
 Aceptado
 
 ## Contexto
-Que el proyecto usara tanto bases relacionales como documentales fue un requisito académico, no una decisión del equipo. Lo que sí quedó abierto fue repartir los 8 microservicios entre esos motores: cuáles necesitaban Postgres, cuáles podían usar algo más liviano como MySQL, y cuáles se beneficiaban de un motor documental como MongoDB — y por qué usar dos motores relacionales distintos (Postgres y MySQL) en vez de uno solo para todo lo relacional.
+Que el proyecto usara tanto bases relacionales como documentales fue un requisito académico, no una decisión del equipo — pero el requisito no decía cuál motor documental usar, ni cómo repartir los 8 microservicios entre los motores. Eso sí quedó abierto: cuáles necesitaban Postgres, cuáles podían usar algo más liviano como MySQL, por qué usar dos motores relacionales distintos en vez de uno solo, y cuál motor documental usar entre las opciones disponibles.
+
+## Por qué MongoDB y no otro motor documental
+Entre los motores documentales disponibles para correr en un contenedor propio (la fase todavía era Docker Compose, no nube), MongoDB fue el que el equipo eligió por tener la imagen oficial de Docker más simple de levantar, la documentación y comunidad más grandes para resolver dudas rápido, y un lenguaje de consultas más expresivo que alternativas más simples tipo clave-valor. No se evaluó a fondo una alternativa como CouchDB porque no aportaba una ventaja concreta para el caso de uso (líneas de pago con campos variables) que justificara el tiempo de aprenderla desde cero en el plazo de esta fase.
 
 ## Decisión
 
