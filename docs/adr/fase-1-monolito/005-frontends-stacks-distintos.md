@@ -1,4 +1,4 @@
-# ADR-007 (Fase 1): Frontend del Core con React, frontend del Switch sin framework
+# ADR-005 (Fase 1): Frontend del Core con React, frontend del Switch sin framework
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026

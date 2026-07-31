@@ -1,4 +1,4 @@
-# ADR-004 (Fase 1): Validación imperativa en el servicio, sin Bean Validation declarativa
+# ADR-002 (Fase 1): Validación imperativa en el servicio, sin Bean Validation declarativa
 
 **Estado:** Aceptado (histórico)
 **Fecha:** Mayo 2026
