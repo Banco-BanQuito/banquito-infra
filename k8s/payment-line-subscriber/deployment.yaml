@@ -2,7 +2,7 @@
 kind: Deployment
 metadata:
   name: payment-line-subscriber-service
-  namespace: banquito-switch
+  namespace: banquito-pubsub
   labels:
     app: payment-line-subscriber
 spec:
@@ -17,7 +17,7 @@ spec:
       labels:
         app: payment-line-subscriber
     spec:
-      serviceAccountName: file-reception-pubsub-ksa
+      serviceAccountName: payment-line-subscriber-pubsub-ksa
       containers:
         - name: payment-line-subscriber-service
           image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-subscriber-service:latest
@@ -52,6 +52,10 @@ spec:
               value: "true"
             - name: CLEARING_PUBSUB_FALLBACK_ENABLED
               value: "false"
+            - name: INTERNAL_PAYMENT_PROCESSOR_GRPC_HOST
+              value: "internal-payment-processor-service.banquito-pubsub.svc.cluster.local"
+            - name: INTERNAL_PAYMENT_PROCESSOR_GRPC_PORT
+              value: "9095"
           envFrom:
             - configMapRef:
                 name: banquito-config

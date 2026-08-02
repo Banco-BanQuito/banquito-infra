@@ -1,52 +1,52 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: clearinghouse-service
-  namespace: banquito-switch
+  name: internal-payment-processor-service
+  namespace: banquito-pubsub
   labels:
-    app: clearinghouse
+    app: internal-payment-processor
 spec:
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      app: clearinghouse
+      app: internal-payment-processor
   template:
     metadata:
       labels:
-        app: clearinghouse
+        app: internal-payment-processor
     spec:
-      serviceAccountName: clearinghouse-pubsub-ksa
       containers:
-        - name: clearinghouse-service
-          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/clearinghouse-service:latest
+        - name: internal-payment-processor-service
+          image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/internal-payment-processor-service:latest
           imagePullPolicy: Always
           ports:
             - name: http
-              containerPort: 8087
+              containerPort: 8092
             - name: grpc
-              containerPort: 9094
+              containerPort: 9095
           env:
             - name: SERVER_PORT
-              value: "8087"
-            - name: CLEARING_GRPC_PORT
-              value: "9094"
-            - name: CLEARING_PUBSUB_LISTENER_ENABLED
-              value: "false"
+              value: "8092"
+            - name: PROCESSOR_GRPC_PORT
+              value: "9095"
+            - name: SPRING_APPLICATION_NAME
+              value: banquito-internal-payment-processor-service
+            - name: DB_URL
+              value: "jdbc:mysql://136.111.132.119:3306/filedb"
+            - name: DB_USER
+              value: root
           envFrom:
             - configMapRef:
                 name: banquito-config
             - secretRef:
-                name: mongo-services-secrets
-            - secretRef:
-                name: external-bank-secrets
-                optional: true
+                name: file-reception-secrets
           readinessProbe:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 120
+            initialDelaySeconds: 180
             periodSeconds: 15
             timeoutSeconds: 5
             failureThreshold: 12
@@ -54,15 +54,14 @@ spec:
             httpGet:
               path: /actuator/health
               port: http
-            initialDelaySeconds: 300
+            initialDelaySeconds: 360
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 6
           resources:
             requests:
               cpu: 100m
-              memory: 384Mi
+              memory: 512Mi
             limits:
               cpu: 500m
               memory: 768Mi
-

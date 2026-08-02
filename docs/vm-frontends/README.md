@@ -23,7 +23,7 @@ Los backends siguen desplegados en Kubernetes. Los frontends solo consumen las A
 | Proyecto GCP | `project-47695a8e-7cb2-4352-af2` |
 | VM | `banquito` |
 | Zona | `us-central1-a` |
-| IP publica | `34.63.127.239` |
+| IP publica | `34.122.207.56` |
 | Usuario SSH | `User` |
 | Servidor web | `Nginx` |
 | Puerto HTTP | `80` |
@@ -32,10 +32,10 @@ Los backends siguen desplegados en Kubernetes. Los frontends solo consumen las A
 
 | Frontend | URL |
 | --- | --- |
-| Web Personas | `http://personas.34.63.127.239.nip.io` |
-| Web Empresas | `http://empresas.34.63.127.239.nip.io` |
-| Teller / Ventanilla | `http://teller.34.63.127.239.nip.io` |
-| Operador | `http://operador.34.63.127.239.nip.io` |
+| Web Personas | `http://personas.34.122.207.56.nip.io` |
+| Web Empresas | `http://empresas.34.122.207.56.nip.io` |
+| Teller / Ventanilla | `http://teller.34.122.207.56.nip.io` |
+| Operador | `http://operador.34.122.207.56.nip.io` |
 
 Tambien se dejaron preparados los dominios DuckDNS en Nginx:
 
@@ -145,10 +145,10 @@ nginx version: nginx/1.24.0 (Ubuntu)
 ### 8. Probar URLs publicas
 
 ```powershell
-curl.exe -s http://personas.34.63.127.239.nip.io
-curl.exe -s http://empresas.34.63.127.239.nip.io
-curl.exe -s http://teller.34.63.127.239.nip.io
-curl.exe -s http://operador.34.63.127.239.nip.io
+curl.exe -s http://personas.34.122.207.56.nip.io
+curl.exe -s http://empresas.34.122.207.56.nip.io
+curl.exe -s http://teller.34.122.207.56.nip.io
+curl.exe -s http://operador.34.122.207.56.nip.io
 ```
 
 ## Conexion de frontends hacia Apigee
@@ -192,7 +192,7 @@ frontend-vm-ssh-private-key
 Valores actuales:
 
 ```text
-frontend-vm-host=34.63.127.239
+frontend-vm-host=34.122.207.56
 frontend-vm-user=User
 frontend-vm-port=22
 frontend-vm-ssh-private-key=<llave privada autorizada en la VM>
@@ -204,7 +204,7 @@ Comandos utilizados para crear o actualizar estos secretos:
 $PROJECT_ID = "project-47695a8e-7cb2-4352-af2"
 $KEY_FILE = "C:\Users\User\Desktop\KUBERNETS-PROYECTO\.deploy-secrets\banquito_frontend_vm_key_github_actions"
 
-"34.63.127.239" | gcloud secrets create frontend-vm-host `
+"34.122.207.56" | gcloud secrets create frontend-vm-host `
   --project $PROJECT_ID `
   --data-file=-
 
@@ -224,7 +224,7 @@ gcloud secrets create frontend-vm-ssh-private-key `
 Si el secreto ya existe, se agrega una nueva version:
 
 ```powershell
-"34.63.127.239" | gcloud secrets versions add frontend-vm-host `
+"34.122.207.56" | gcloud secrets versions add frontend-vm-host `
   --project $PROJECT_ID `
   --data-file=-
 
@@ -389,10 +389,10 @@ sudo systemctl reload nginx
 Probar las URLs desde la misma VM:
 
 ```bash
-curl http://personas.34.63.127.239.nip.io
-curl http://empresas.34.63.127.239.nip.io
-curl http://teller.34.63.127.239.nip.io
-curl http://operador.34.63.127.239.nip.io
+curl http://personas.34.122.207.56.nip.io
+curl http://empresas.34.122.207.56.nip.io
+curl http://teller.34.122.207.56.nip.io
+curl http://operador.34.122.207.56.nip.io
 ```
 
 ### Verificar que los frontends ya no estan en Kubernetes
@@ -437,7 +437,7 @@ Actualmente las URLs `nip.io` de la VM estan por HTTP.
 
 Para HTTPS se necesita:
 
-1. Dominio visible publicamente apuntando a `34.63.127.239`.
+1. Dominio visible publicamente apuntando a `34.122.207.56`.
 2. Certificado TLS.
 3. Configuracion Nginx en puerto `443`.
 

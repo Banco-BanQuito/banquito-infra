@@ -70,8 +70,8 @@ data:
 
   FILE_RECEPTION_HOST: file-reception-service.banquito-switch.svc.cluster.local
   PAYMENT_LINE_CLASSIFIER_HOST: payment-line-classifier-service.banquito-switch.svc.cluster.local
-  PAYMENT_LINE_PUBLISHER_HOST: payment-line-publisher-service.banquito-switch.svc.cluster.local
-  PAYMENT_LINE_SUBSCRIBER_HOST: payment-line-subscriber-service.banquito-switch.svc.cluster.local
+  PAYMENT_LINE_PUBLISHER_HOST: payment-line-publisher-service.banquito-pubsub.svc.cluster.local
+  PAYMENT_LINE_SUBSCRIBER_HOST: payment-line-subscriber-service.banquito-pubsub.svc.cluster.local
   TARIFF_HOST: tariff-service.banquito-switch.svc.cluster.local
   TARIFF_SERVICE_GRPC_HOST: tariff-service.banquito-switch.svc.cluster.local
   TARIFF_SERVICE_GRPC_PORT: "9090"
@@ -100,7 +100,7 @@ data:
   GRPC_PORT: "9092"
   GRPC_SERVER_PORT: "9090"
 
-  CORS_ALLOWED_ORIGINS: http://personas.34.63.127.239.nip.io,http://empresas.34.63.127.239.nip.io,http://teller.34.63.127.239.nip.io,http://operador.34.63.127.239.nip.io,http://personas.8.233.141.65.nip.io,http://empresas.8.233.141.65.nip.io,http://teller.8.233.141.65.nip.io,http://operador.8.233.141.65.nip.io,https://banquito-personas.duckdns.org,https://banquito-empresas.duckdns.org,https://banquito-teller.duckdns.org,https://banquito-operador.duckdns.org,https://136.68.89.25.nip.io
+  CORS_ALLOWED_ORIGINS: http://personas.34.122.207.56.nip.io,http://empresas.34.122.207.56.nip.io,http://teller.34.122.207.56.nip.io,http://operador.34.122.207.56.nip.io,http://personas.34.63.127.239.nip.io,http://empresas.34.63.127.239.nip.io,http://teller.34.63.127.239.nip.io,http://operador.34.63.127.239.nip.io,http://personas.8.233.141.65.nip.io,http://empresas.8.233.141.65.nip.io,http://teller.8.233.141.65.nip.io,http://operador.8.233.141.65.nip.io,https://banquito-personas.duckdns.org,https://banquito-empresas.duckdns.org,https://banquito-teller.duckdns.org,https://banquito-operador.duckdns.org,https://136.68.89.25.nip.io
   JPA_DDL_AUTO: update
   DDL_AUTO: update
   SMTP_HOST: ""
@@ -115,6 +115,125 @@ kind: ConfigMap
 metadata:
   name: banquito-config
   namespace: banquito-switch
+data:
+  ENVIRONMENT: demo
+  TZ: America/Guayaquil
+  APP_FORCE_BUSINESS_DAY: "true"
+  APP_CUTOFF_HOUR: "23"
+
+  API_MANAGER_URL: https://136.68.89.25.nip.io
+  CORE_GATEWAY_URL: http://account-core-service.banquito-core.svc.cluster.local:8081
+  SWITCH_GATEWAY_URL: https://136.68.89.25.nip.io/api/v2
+  OAUTH_URL: https://securetoken.google.com/project-47695a8e-7cb2-4352-af2
+  OAUTH_ISSUER_URI: https://securetoken.google.com/project-47695a8e-7cb2-4352-af2
+  OAUTH_JWKS_URI: https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com
+
+  DB_HOST: "136.112.87.173"
+  DB_PORT: "5432"
+  DB_NAME: banquito
+  DB_SCHEMA: account_core
+  ACCOUNTING_DB_SCHEMA: accounting
+  MYSQL_HOST: "136.111.132.119"
+  MYSQL_PORT: "3306"
+  PARTY_DB_NAME: partydb
+  FILE_DB_NAME: filedb
+  TARIFF_DB_NAME: tariffdb
+  MONGODB_HOST: banquito-cluster.ffdlgoy.mongodb.net
+  MONGODB_PORT: "27017"
+  MONGODB_DATABASE: banquito
+
+  GCP_PROJECT_ID: project-47695a8e-7cb2-4352-af2
+  PUBSUB_PROJECT_ID: project-47695a8e-7cb2-4352-af2
+  APP_PAYMENT_LINE_TRANSPORT: pubsub
+  APP_CORE_VALIDATION_ENABLED: "false"
+  PUBSUB_TOPIC_PAYMENT_LINES: banquito-payment-lines
+  PUBSUB_TOPIC_CLEARING_EVENTS: banquito-clearing-events
+  PUBSUB_TOPIC_DEAD_LETTER: banquito-dead-letter
+  PUBSUB_ROUTING_KEY_ONUS: onus
+  PUBSUB_ROUTING_KEY_OFFUS: offus
+  PUBSUB_ROUTING_KEY_INVALID: invalid
+  PUBSUB_ROUTING_KEY_CLEARING_OUTBOUND: clearing.outbound
+  APP_EMBEDDED_ROUTER_ENABLED: "true"
+  APP_DISPATCH_ENABLED: "true"
+  APP_DISPATCH_ONUS_ENABLED: "true"
+  APP_DISPATCH_OFFUS_ENABLED: "true"
+  APP_DISPATCH_INVALID_ENABLED: "true"
+  CLEARINGHOUSE_GRPC_HOST: clearinghouse-service.banquito-switch.svc.cluster.local
+  CLEARINGHOUSE_GRPC_PORT: "9094"
+  CLEARINGHOUSE_DIRECT_DELEGATION_ENABLED: "true"
+  CLEARING_PUBSUB_FALLBACK_ENABLED: "false"
+  CLEARING_PUBSUB_LISTENER_ENABLED: "false"
+  BANQUITO_ROUTING_CODE: "001"
+  BANQUIL_BANK_CODE: BANQUIL
+  BANQUIL_ROUTING_CODES: "002"
+  BANQUIL_ENDPOINT_URL: http://clearinghouse-service.banquito-switch.svc.cluster.local:8087/mock/banks/banquil/payments
+  BANQUIL_API_KEY_HEADER_NAME: x-api-key
+  BANQUIL_TIMEOUT_SECONDS: "10"
+  PUBSUB_SUBSCRIPTION_PAYMENT_LINES_ONUS: payment-lines-onus-sub
+  PUBSUB_SUBSCRIPTION_PAYMENT_LINES_OFFUS: payment-lines-offus-sub
+  PUBSUB_SUBSCRIPTION_PAYMENT_LINES_INVALID: payment-lines-invalid-sub
+  PUBSUB_SUBSCRIPTION_CLEARING_OUTBOUND: clearing-outbound-sub
+  PUBSUB_SUBSCRIPTION_DEAD_LETTER_MONITOR: dead-letter-monitor-sub
+
+  ACCOUNT_HOST: account-core-service.banquito-core.svc.cluster.local
+  ACCOUNT_CORE_HOST: account-core-service.banquito-core.svc.cluster.local
+  ACCOUNT_CORE_GRPC_HOST: account-core-service.banquito-core.svc.cluster.local
+  ACCOUNT_CORE_GRPC_PORT: "9091"
+  ACCOUNTING_HOST: accounting-service.banquito-core.svc.cluster.local
+  ACCOUNTING_GRPC_HOST: accounting-service.banquito-core.svc.cluster.local
+  ACCOUNTING_GRPC_PORT: "9092"
+  PARTY_HOST: party-service.banquito-core.svc.cluster.local
+  PARTY_GRPC_HOST: party-service.banquito-core.svc.cluster.local
+  PARTY_GRPC_PORT: "9093"
+
+  FILE_RECEPTION_HOST: file-reception-service.banquito-switch.svc.cluster.local
+  PAYMENT_LINE_CLASSIFIER_HOST: payment-line-classifier-service.banquito-switch.svc.cluster.local
+  PAYMENT_LINE_PUBLISHER_HOST: payment-line-publisher-service.banquito-pubsub.svc.cluster.local
+  PAYMENT_LINE_SUBSCRIBER_HOST: payment-line-subscriber-service.banquito-pubsub.svc.cluster.local
+  TARIFF_HOST: tariff-service.banquito-switch.svc.cluster.local
+  TARIFF_SERVICE_GRPC_HOST: tariff-service.banquito-switch.svc.cluster.local
+  TARIFF_SERVICE_GRPC_PORT: "9090"
+  CLEARINGHOUSE_HOST: clearinghouse-service.banquito-switch.svc.cluster.local
+  REPORT_HOST: report-service.banquito-switch.svc.cluster.local
+  NOTIFICATION_HOST: notification-service.banquito-switch.svc.cluster.local
+  NOTIFICATION_GRPC_HOST: notification-service.banquito-switch.svc.cluster.local
+  NOTIFICATION_GRPC_PORT: "9092"
+  NOTIFICATION_SERVICE_GRPC_HOST: notification-service.banquito-switch.svc.cluster.local
+  NOTIFICATION_SERVICE_GRPC_PORT: "9092"
+
+  ACCOUNT_CORE_PORT: "8081"
+  ACCOUNTING_PORT: "8082"
+  PARTY_PORT: "8083"
+  FILE_RECEPTION_PORT: "8084"
+  PAYMENT_LINE_CLASSIFIER_PORT: "8090"
+  PAYMENT_LINE_PUBLISHER_PORT: "8092"
+  PAYMENT_LINE_SUBSCRIBER_PORT: "8091"
+  TARIFF_PORT: "8086"
+  CLEARINGHOUSE_PORT: "8087"
+  CLEARINGHOUSE_GRPC_PORT: "9094"
+  REPORT_PORT: "8088"
+  NOTIFICATION_PORT: "8089"
+  FRONTEND_PORT: "8080"
+
+  GRPC_PORT: "9092"
+  GRPC_SERVER_PORT: "9090"
+
+  CORS_ALLOWED_ORIGINS: http://personas.34.122.207.56.nip.io,http://empresas.34.122.207.56.nip.io,http://teller.34.122.207.56.nip.io,http://operador.34.122.207.56.nip.io,http://personas.34.63.127.239.nip.io,http://empresas.34.63.127.239.nip.io,http://teller.34.63.127.239.nip.io,http://operador.34.63.127.239.nip.io,http://personas.8.233.141.65.nip.io,http://empresas.8.233.141.65.nip.io,http://teller.8.233.141.65.nip.io,http://operador.8.233.141.65.nip.io,https://banquito-personas.duckdns.org,https://banquito-empresas.duckdns.org,https://banquito-teller.duckdns.org,https://banquito-operador.duckdns.org,https://136.68.89.25.nip.io
+  JPA_DDL_AUTO: update
+  DDL_AUTO: update
+  SMTP_HOST: ""
+  SMTP_PORT: "587"
+  SMTP_ENABLED: "false"
+  MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
+  MANAGEMENT_HEALTH_MONGO_ENABLED: "false"
+  MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: banquito-config
+  namespace: banquito-pubsub
 data:
   ENVIRONMENT: demo
   TZ: America/Guayaquil
@@ -182,8 +301,8 @@ data:
 
   FILE_RECEPTION_HOST: file-reception-service.banquito-switch.svc.cluster.local
   PAYMENT_LINE_CLASSIFIER_HOST: payment-line-classifier-service.banquito-switch.svc.cluster.local
-  PAYMENT_LINE_PUBLISHER_HOST: payment-line-publisher-service.banquito-switch.svc.cluster.local
-  PAYMENT_LINE_SUBSCRIBER_HOST: payment-line-subscriber-service.banquito-switch.svc.cluster.local
+  PAYMENT_LINE_PUBLISHER_HOST: payment-line-publisher-service.banquito-pubsub.svc.cluster.local
+  PAYMENT_LINE_SUBSCRIBER_HOST: payment-line-subscriber-service.banquito-pubsub.svc.cluster.local
   TARIFF_HOST: tariff-service.banquito-switch.svc.cluster.local
   TARIFF_SERVICE_GRPC_HOST: tariff-service.banquito-switch.svc.cluster.local
   TARIFF_SERVICE_GRPC_PORT: "9090"
@@ -212,7 +331,7 @@ data:
   GRPC_PORT: "9092"
   GRPC_SERVER_PORT: "9090"
 
-  CORS_ALLOWED_ORIGINS: http://personas.34.63.127.239.nip.io,http://empresas.34.63.127.239.nip.io,http://teller.34.63.127.239.nip.io,http://operador.34.63.127.239.nip.io,http://personas.8.233.141.65.nip.io,http://empresas.8.233.141.65.nip.io,http://teller.8.233.141.65.nip.io,http://operador.8.233.141.65.nip.io,https://banquito-personas.duckdns.org,https://banquito-empresas.duckdns.org,https://banquito-teller.duckdns.org,https://banquito-operador.duckdns.org,https://136.68.89.25.nip.io
+  CORS_ALLOWED_ORIGINS: http://personas.34.122.207.56.nip.io,http://empresas.34.122.207.56.nip.io,http://teller.34.122.207.56.nip.io,http://operador.34.122.207.56.nip.io,http://personas.34.63.127.239.nip.io,http://empresas.34.63.127.239.nip.io,http://teller.34.63.127.239.nip.io,http://operador.34.63.127.239.nip.io,http://personas.8.233.141.65.nip.io,http://empresas.8.233.141.65.nip.io,http://teller.8.233.141.65.nip.io,http://operador.8.233.141.65.nip.io,https://banquito-personas.duckdns.org,https://banquito-empresas.duckdns.org,https://banquito-teller.duckdns.org,https://banquito-operador.duckdns.org,https://136.68.89.25.nip.io
   JPA_DDL_AUTO: update
   DDL_AUTO: update
   SMTP_HOST: ""
@@ -221,4 +340,3 @@ data:
   MANAGEMENT_HEALTH_RABBIT_ENABLED: "false"
   MANAGEMENT_HEALTH_MONGO_ENABLED: "false"
   MANAGEMENT_HEALTH_MAIL_ENABLED: "false"
-

@@ -43,17 +43,21 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | [anexo-r-separacion-switch-pubsub.md](anexo-r-separacion-switch-pubsub.md) | Separacion logica del Switch: recepcion, clasificacion, publicacion, Pub/Sub y subscriber |
 | [anexo-s-frontends-vm-cicd.md](anexo-s-frontends-vm-cicd.md) | Frontends fuera de GKE, servidos por VM/Nginx y desplegados con GitHub Actions |
 | [anexo-t-gke-standard-backends-vm-frontends.md](anexo-t-gke-standard-backends-vm-frontends.md) | Opcion de migracion a GKE Standard solo para backends, manteniendo frontends en VM |
+| [anexo-u-autopilot-namespaces-pubsub.md](anexo-u-autopilot-namespaces-pubsub.md) | Implementacion actual en GKE Autopilot con namespace separado para adaptadores Pub/Sub |
+| [anexo-v-comandos-creacion-autopilot.md](anexo-v-comandos-creacion-autopilot.md) | Comandos ejecutados para crear GKE Autopilot, namespaces, Gateway, HPA y workloads |
+| [anexo-w-analisis-bounded-context-switch.md](anexo-w-analisis-bounded-context-switch.md) | Analisis de bounded context del Switch, responsabilidades por microservicio y diagramas de flujo |
+| [anexo-x-clearing-banco-externo-secret-manager.md](anexo-x-clearing-banco-externo-secret-manager.md) | Configuracion de `clearinghouse-service` para banco externo BanQuil con Secret Manager |
 
 ## Estado actual resumido
 
 | Elemento | Estado |
 | --- | --- |
-| Cluster | `banquito-cluster-east` |
+| Cluster | `banquito-cluster-autopilot` |
 | Modo | GKE Autopilot |
 | Region | `us-east1` |
 | Proyecto GKE | `project-47695a8e-7cb2-4352-af2` |
 | Artifact Registry | `us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito` |
-| Namespaces | `banquito-core`, `banquito-switch`, `banquito-gateway` |
+| Namespaces | `banquito-core`, `banquito-switch`, `banquito-pubsub`, `banquito-gateway` |
 | API Manager | Apigee, dominio `https://136.68.89.25.nip.io` |
 | Gateway GKE | `banquito-public-gateway`, IP publica `8.233.141.65` |
 | Frontends | VM/Nginx, fuera del cluster GKE |

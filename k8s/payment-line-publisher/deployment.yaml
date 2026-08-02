@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-line-publisher-service
-  namespace: banquito-switch
+  namespace: banquito-pubsub
   labels:
     app: payment-line-publisher
 spec:
@@ -17,7 +17,7 @@ spec:
       labels:
         app: payment-line-publisher
     spec:
-      serviceAccountName: file-reception-pubsub-ksa
+      serviceAccountName: payment-line-publisher-pubsub-ksa
       containers:
         - name: payment-line-publisher-service
           image: us-central1-docker.pkg.dev/project-47695a8e-7cb2-4352-af2/banquito/payment-line-publisher-service:latest

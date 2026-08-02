@@ -405,6 +405,40 @@ banquito-core:   Deployments 0/0
 banquito-switch: Deployments 0/0
 ```
 
+## Integracion de clearing con banco externo
+
+Se agrego la configuracion para que `clearinghouse-service` pueda conectarse a un banco externo de prueba llamado BanQuil.
+
+La configuracion no sensible queda en `ConfigMap`:
+
+```text
+BANQUITO_ROUTING_CODE
+BANQUIL_BANK_CODE
+BANQUIL_ROUTING_CODES
+BANQUIL_ENDPOINT_URL
+BANQUIL_API_KEY_HEADER_NAME
+BANQUIL_TIMEOUT_SECONDS
+```
+
+Las credenciales quedan en Google Secret Manager y se sincronizan como Kubernetes Secret:
+
+```text
+external-bank-secrets
+```
+
+Variables sensibles:
+
+```text
+BANQUIL_API_KEY
+BANQUIL_BEARER_TOKEN
+```
+
+Documento detallado:
+
+```text
+docs/kubernetes/anexo-x-clearing-banco-externo-secret-manager.md
+```
+
 ## Validacion por bloques
 
 Fecha de validacion: `2026-07-17`.

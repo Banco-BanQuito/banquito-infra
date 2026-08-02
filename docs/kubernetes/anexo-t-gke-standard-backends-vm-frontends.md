@@ -231,6 +231,164 @@ gcloud container clusters update banquito-cluster-standard `
   --project project-47695a8e-7cb2-4352-af2
 ```
 
+## Apagado ejecutado del cluster Standard
+
+El apagado operativo se hizo en dos niveles:
+
+1. Primero se apagaron los microservicios, dejando los Deployments en `0/0`.
+2. Despues se bajo el `default-pool` a `0` nodos para que no queden VMs worker consumiendo.
+
+### 1. Apagar Deployments de Core
+
+En Windows 11 PowerShell:
+
+```powershell
+kubectl --insecure-skip-tls-verify=true scale `
+  deployment/account-core-service `
+  deployment/accounting-service `
+  deployment/party-service `
+  --replicas=0 `
+  -n banquito-core
+```
+
+Resultado esperado:
+
+```text
+deployment.apps/account-core-service scaled
+deployment.apps/accounting-service scaled
+deployment.apps/party-service scaled
+```
+
+### 2. Apagar Deployments de Switch
+
+```powershell
+kubectl --insecure-skip-tls-verify=true scale `
+  deployment/clearinghouse-service `
+  deployment/file-reception-service `
+  deployment/notification-service `
+  deployment/payment-line-classifier-service `
+  deployment/payment-line-publisher-service `
+  deployment/payment-line-subscriber-service `
+  deployment/report-service `
+  deployment/tariff-service `
+  --replicas=0 `
+  -n banquito-switch
+```
+
+Resultado esperado:
+
+```text
+deployment.apps/clearinghouse-service scaled
+deployment.apps/file-reception-service scaled
+deployment.apps/notification-service scaled
+deployment.apps/payment-line-classifier-service scaled
+deployment.apps/payment-line-publisher-service scaled
+deployment.apps/payment-line-subscriber-service scaled
+deployment.apps/report-service scaled
+deployment.apps/tariff-service scaled
+```
+
+Nota: se usaron nombres explicitos porque `kubectl scale deployment --all` puede fallar si la conexion al API server se corta durante operaciones de ajuste del cluster.
+
+### 3. Validar Deployments apagados
+
+```powershell
+kubectl --insecure-skip-tls-verify=true get deploy -n banquito-core
+kubectl --insecure-skip-tls-verify=true get deploy -n banquito-switch
+```
+
+Validacion obtenida:
+
+```text
+banquito-core:
+account-core-service   0/0
+accounting-service     0/0
+party-service          0/0
+
+banquito-switch:
+clearinghouse-service             0/0
+file-reception-service            0/0
+notification-service              0/0
+payment-line-classifier-service   0/0
+payment-line-publisher-service    0/0
+payment-line-subscriber-service   0/0
+report-service                    0/0
+tariff-service                    0/0
+```
+
+### 4. Desactivar autoscaling temporalmente
+
+Para poder reducir el node pool manualmente a cero, se desactivo el autoscaling del pool:
+
+```powershell
+gcloud container node-pools update default-pool `
+  --cluster banquito-cluster-standard `
+  --region us-east1 `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --no-enable-autoscaling
+```
+
+### 5. Bajar el node pool a 0 nodos
+
+```powershell
+gcloud container clusters resize banquito-cluster-standard `
+  --region us-east1 `
+  --node-pool default-pool `
+  --num-nodes 0 `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --quiet
+```
+
+Si la consola corta por tiempo de espera, no significa necesariamente que fallo. Se debe revisar la operacion:
+
+```powershell
+gcloud container operations list `
+  --region us-east1 `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --sort-by="~startTime" `
+  --limit=5
+```
+
+En la ejecucion realizada, la operacion fue:
+
+```text
+TYPE: SET_NODE_POOL_SIZE
+TARGET: default-pool
+STATUS: DONE
+```
+
+Para esperar una operacion especifica:
+
+```powershell
+gcloud container operations wait OPERATION_ID `
+  --region us-east1 `
+  --project project-47695a8e-7cb2-4352-af2
+```
+
+### 6. Confirmar que no quedan VMs worker
+
+```powershell
+gcloud compute instances list `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --filter="name~gke-banquito-cluster-sta" `
+  --format="table(name,zone,status,machineType.basename())"
+```
+
+Validacion obtenida: el comando no devolvio instancias, por lo tanto no quedaron worker nodes del cluster Standard encendidos.
+
+### 7. Estado final del apagado
+
+| Elemento | Estado |
+| --- | --- |
+| Deployments Core | `0/0` |
+| Deployments Switch | `0/0` |
+| Frontends | Fuera de GKE, en VM/Nginx |
+| Node pool `default-pool` | Redimensionado a `0` |
+| VMs worker GKE Standard | Sin instancias visibles |
+| Cluster GKE Standard | Sigue creado |
+
+Importante: esto reduce el consumo de worker nodes. El cluster Standard sigue existiendo, por lo que pueden quedar costos residuales del plano de control, Gateway/Load Balancer, IPs o recursos de red asociados. Para eliminar todo costo del cluster, la accion seria borrar el cluster, pero eso es distinto a apagarlo.
+
 Si el node pool tiene otro nombre, obtenerlo con:
 
 ```powershell
