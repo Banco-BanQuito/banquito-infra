@@ -47,6 +47,7 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | [anexo-v-comandos-creacion-autopilot.md](anexo-v-comandos-creacion-autopilot.md) | Comandos ejecutados para crear GKE Autopilot, namespaces, Gateway, HPA y workloads |
 | [anexo-w-analisis-bounded-context-switch.md](anexo-w-analisis-bounded-context-switch.md) | Analisis de bounded context del Switch, responsabilidades por microservicio y diagramas de flujo |
 | [anexo-x-clearing-banco-externo-secret-manager.md](anexo-x-clearing-banco-externo-secret-manager.md) | Configuracion de `clearinghouse-service` para banco externo BanQuil con Secret Manager |
+| [anexo-y-lista-repositorios.md](anexo-y-lista-repositorios.md) | Lista consolidada de repositorios, ramas, URLs y ultimo commit validado |
 
 ## Estado actual resumido
 
