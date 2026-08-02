@@ -1,0 +1,83 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: file-reception-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: file-reception
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: payment-line-classifier-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: payment-line-classifier
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: clearinghouse-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: clearinghouse
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: tariff-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: tariff
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: report-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: report
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: notification-service-monitoring
+  namespace: banquito-switch
+spec:
+  selector:
+    matchLabels:
+      app: notification
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s

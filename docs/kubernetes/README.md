@@ -19,6 +19,7 @@ La guia esta organizada en fases para que el documento final se entienda desde e
 | 8 | [fase-08-acceso-externo-apigee.md](fase-08-acceso-externo-apigee.md) | Gateway de GKE, rutas HTTP y exposicion para Apigee |
 | 9 | [fase-09-servicios-externos.md](fase-09-servicios-externos.md) | Cloud SQL, MongoDB, Pub/Sub, OAuth, SMTP y Secrets reales |
 | 10 | [fase-10-cicd.md](fase-10-cicd.md) | Automatizacion con GitHub Actions |
+| 11 | [fase-11-observabilidad-cloud-operations.md](fase-11-observabilidad-cloud-operations.md) | Metricas, logs y trazabilidad con Google Cloud Operations |
 
 ## Anexos
 

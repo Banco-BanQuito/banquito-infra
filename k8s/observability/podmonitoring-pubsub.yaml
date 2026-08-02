@@ -1,0 +1,41 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: payment-line-publisher-service-monitoring
+  namespace: banquito-pubsub
+spec:
+  selector:
+    matchLabels:
+      app: payment-line-publisher
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: payment-line-subscriber-service-monitoring
+  namespace: banquito-pubsub
+spec:
+  selector:
+    matchLabels:
+      app: payment-line-subscriber
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: internal-payment-processor-service-monitoring
+  namespace: banquito-pubsub
+spec:
+  selector:
+    matchLabels:
+      app: internal-payment-processor
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s

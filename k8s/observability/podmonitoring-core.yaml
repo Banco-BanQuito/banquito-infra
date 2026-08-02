@@ -1,0 +1,41 @@
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: account-core-service-monitoring
+  namespace: banquito-core
+spec:
+  selector:
+    matchLabels:
+      app: account-core
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: accounting-service-monitoring
+  namespace: banquito-core
+spec:
+  selector:
+    matchLabels:
+      app: accounting
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
+---
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: party-service-monitoring
+  namespace: banquito-core
+spec:
+  selector:
+    matchLabels:
+      app: party
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 30s
