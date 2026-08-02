@@ -254,7 +254,348 @@ banquito-infra/k8s/observability/podmonitoring-switch.yaml
 banquito-infra/k8s/observability/podmonitoring-pubsub.yaml
 ```
 
-## 10. Nota operativa Windows
+## 10. Donde visualizar en Google Cloud Console
+
+### GKE
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Kubernetes Engine
+  -> Clusters
+  -> banquito-cluster-autopilot
+```
+
+URL directa:
+
+```text
+https://console.cloud.google.com/kubernetes/clusters/details/us-east1/banquito-cluster-autopilot?project=project-47695a8e-7cb2-4352-af2
+```
+
+Aqui se revisa:
+
+| Vista | Uso |
+| --- | --- |
+| Workloads | Deployments, Pods, estado Running/Pending/CrashLoopBackOff |
+| Services & Ingress | Services internos y Gateway/Load Balancer |
+| Observability | CPU, memoria, reinicios y eventos del cluster |
+
+### Cloud Monitoring
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Monitoring
+  -> Metrics Explorer
+```
+
+URL directa:
+
+```text
+https://console.cloud.google.com/monitoring/metrics-explorer?project=project-47695a8e-7cb2-4352-af2
+```
+
+Metricas recomendadas:
+
+| Recurso | Metrica |
+| --- | --- |
+| Kubernetes Container | CPU usage time |
+| Kubernetes Container | Memory used bytes |
+| Kubernetes Pod | Restart count |
+| Pub/Sub Subscription | Unacked messages |
+| Pub/Sub Subscription | Oldest unacked message age |
+| Cloud SQL Database | CPU utilization |
+| Cloud SQL Database | Memory utilization |
+
+### Managed Prometheus
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Monitoring
+  -> Metrics Explorer
+  -> Metric
+  -> Prometheus Target
+```
+
+PromQL utiles:
+
+```promql
+up
+```
+
+```promql
+jvm_memory_used_bytes
+```
+
+```promql
+http_server_requests_seconds_count
+```
+
+```promql
+process_cpu_usage
+```
+
+```promql
+sum by (job) (rate(http_server_requests_seconds_count[5m]))
+```
+
+### Cloud Logging
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Logging
+  -> Logs Explorer
+```
+
+URL directa:
+
+```text
+https://console.cloud.google.com/logs/query?project=project-47695a8e-7cb2-4352-af2
+```
+
+Filtros utiles:
+
+Logs de todo GKE:
+
+```text
+resource.type="k8s_container"
+```
+
+Logs de Core:
+
+```text
+resource.type="k8s_container"
+resource.labels.namespace_name="banquito-core"
+```
+
+Logs del Switch:
+
+```text
+resource.type="k8s_container"
+resource.labels.namespace_name="banquito-switch"
+```
+
+Logs de adaptadores Pub/Sub:
+
+```text
+resource.type="k8s_container"
+resource.labels.namespace_name="banquito-pubsub"
+```
+
+Logs de un microservicio:
+
+```text
+resource.type="k8s_container"
+resource.labels.namespace_name="banquito-switch"
+resource.labels.container_name="file-reception-service"
+```
+
+Errores:
+
+```text
+resource.type="k8s_container"
+severity>=ERROR
+```
+
+### Pub/Sub
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Pub/Sub
+  -> Topics
+  -> Subscriptions
+```
+
+URL directa:
+
+```text
+https://console.cloud.google.com/cloudpubsub/topic/list?project=project-47695a8e-7cb2-4352-af2
+```
+
+Revisar:
+
+| Elemento | Uso |
+| --- | --- |
+| Topics | Validar que se estan publicando mensajes |
+| Subscriptions | Ver mensajes pendientes, ACK y errores |
+| Metrics | Ver velocidad de publicacion y consumo |
+
+### Cloud Trace
+
+Ruta:
+
+```text
+Google Cloud Console
+  -> Trace
+  -> Trace Explorer
+```
+
+URL directa:
+
+```text
+https://console.cloud.google.com/traces/list?project=project-47695a8e-7cb2-4352-af2
+```
+
+Nota:
+
+```text
+Cloud Trace ya esta habilitado, pero para ver trazas de negocio entre microservicios se debe instrumentar Java con OpenTelemetry.
+```
+
+## 11. Comandos para visualizar desde Windows
+
+### Estado general del cluster
+
+```powershell
+kubectl get nodes
+kubectl get namespaces
+kubectl get deployments -A
+kubectl get pods -A
+kubectl get svc -A
+```
+
+### Estado por namespace
+
+```powershell
+kubectl get pods -n banquito-core
+kubectl get pods -n banquito-switch
+kubectl get pods -n banquito-pubsub
+```
+
+### Consumo de recursos
+
+```powershell
+kubectl top nodes
+kubectl top pods -n banquito-core
+kubectl top pods -n banquito-switch
+kubectl top pods -n banquito-pubsub
+```
+
+### HPA
+
+```powershell
+kubectl get hpa -A
+kubectl describe hpa account-core-service-hpa -n banquito-core
+kubectl describe hpa file-reception-service-hpa -n banquito-switch
+```
+
+### Logs
+
+```powershell
+kubectl logs -n banquito-core deployment/account-core-service --tail=100
+kubectl logs -n banquito-core deployment/accounting-service --tail=100
+kubectl logs -n banquito-core deployment/party-service --tail=100
+```
+
+```powershell
+kubectl logs -n banquito-switch deployment/file-reception-service --tail=100
+kubectl logs -n banquito-switch deployment/payment-line-classifier-service --tail=100
+kubectl logs -n banquito-switch deployment/clearinghouse-service --tail=100
+kubectl logs -n banquito-switch deployment/tariff-service --tail=100
+kubectl logs -n banquito-switch deployment/report-service --tail=100
+kubectl logs -n banquito-switch deployment/notification-service --tail=100
+```
+
+```powershell
+kubectl logs -n banquito-pubsub deployment/payment-line-publisher-service --tail=100
+kubectl logs -n banquito-pubsub deployment/payment-line-subscriber-service --tail=100
+kubectl logs -n banquito-pubsub deployment/internal-payment-processor-service --tail=100
+```
+
+### Logs en vivo
+
+```powershell
+kubectl logs -n banquito-switch deployment/file-reception-service -f
+kubectl logs -n banquito-pubsub deployment/payment-line-subscriber-service -f
+kubectl logs -n banquito-pubsub deployment/internal-payment-processor-service -f
+```
+
+### Eventos del cluster
+
+```powershell
+kubectl get events -A --sort-by=.lastTimestamp
+```
+
+### PodMonitoring
+
+```powershell
+kubectl get podmonitoring -A
+kubectl describe podmonitoring account-core-service-monitoring -n banquito-core
+kubectl describe podmonitoring file-reception-service-monitoring -n banquito-switch
+kubectl describe podmonitoring payment-line-subscriber-service-monitoring -n banquito-pubsub
+```
+
+### Probar endpoint Prometheus de un microservicio
+
+```powershell
+kubectl port-forward -n banquito-core svc/account-core-service 8081:8081
+```
+
+Abrir:
+
+```text
+http://localhost:8081/actuator/prometheus
+```
+
+Otro ejemplo:
+
+```powershell
+kubectl port-forward -n banquito-switch svc/file-reception-service 8084:8084
+```
+
+Abrir:
+
+```text
+http://localhost:8084/actuator/prometheus
+```
+
+### Pub/Sub desde CLI
+
+Listar topics:
+
+```powershell
+gcloud pubsub topics list --project project-47695a8e-7cb2-4352-af2
+```
+
+Listar subscriptions:
+
+```powershell
+gcloud pubsub subscriptions list --project project-47695a8e-7cb2-4352-af2
+```
+
+Ver detalle de una subscription:
+
+```powershell
+gcloud pubsub subscriptions describe payment-lines-onus-sub --project project-47695a8e-7cb2-4352-af2
+```
+
+### Cloud Monitoring desde CLI
+
+Listar metric descriptors de Pub/Sub:
+
+```powershell
+gcloud monitoring metrics descriptors list `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --filter='metric.type:pubsub.googleapis.com/subscription'
+```
+
+Listar metric descriptors de Kubernetes:
+
+```powershell
+gcloud monitoring metrics descriptors list `
+  --project project-47695a8e-7cb2-4352-af2 `
+  --filter='metric.type:kubernetes.io'
+```
+
+## 12. Nota operativa Windows
 
 Durante la aplicacion desde Windows se encontro que las variables locales `HTTP_PROXY` y `HTTPS_PROXY` apuntaban a `http://127.0.0.1:9`, lo que impedia a `kubectl` conectarse al API Server.
 
