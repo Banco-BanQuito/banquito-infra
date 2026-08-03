@@ -20,6 +20,9 @@
 --   - Estas 4 reglas solo mueven PRINCIPAL: la comision de un pago interbancario
 --     se cobra en el flujo de lote (RF-04), no en la liquidacion.
 --
+-- Modelo de liquidacion: BILATERAL contra cuenta Nostro (no via camara de
+-- compensacion). Requiere que 1.1.1.01 este fondeada -- ver 15-seed-nostro-funding.sql.
+--
 -- Cuentas involucradas:
 --   1.1.0.01  ACTIVO   Banco Central / Camara de Compensacion
 --   1.1.1.01  ACTIVO   Nostro Banco 003
@@ -36,18 +39,27 @@
 -- -----------------------------------------------------------------------------
 -- Liquidacion del pago que ya salio hacia el banco 003. El debito al cliente y
 -- el credito a la cuenta puente ya ocurrieron en EXTERNAL_TRANSFER_*; esta regla
--- SOLO salda la cuenta puente contra la camara de compensacion.
+-- SOLO salda la cuenta puente contra la cuenta Nostro.
 --
 --   DEBITO  2.4.0.01  Transferencias por Liquidar  -> se cancela la obligacion
---   CREDITO 1.1.0.01  Camara de Compensacion       -> sale el dinero del banco
+--   CREDITO 1.1.1.01  Nostro Banco 003             -> baja nuestro saldo alla
 --
--- No toca 1.1.1.01 (Nostro): en este modelo la liquidacion se hace via camara,
--- no debitando el saldo depositado en el banco corresponsal. Si la operativa
--- real liquidara contra Nostro, cambiar 1.1.0.01 por 1.1.1.01 en la linea 2.
+-- Modelo BILATERAL (decision del 2026-08-03): el pago se descuenta del saldo que
+-- BanQuito mantiene depositado EN el banco 003, no se liquida via camara de
+-- compensacion. Por eso se acredita 1.1.1.01 (Nostro, activo) y no 1.1.0.01.
+--
+-- REQUISITO OPERATIVO: la cuenta Nostro debe estar FONDEADA antes de enviar
+-- pagos. Cada liquidacion la acredita (baja el activo); si el saldo llega a
+-- cero, los siguientes pagos la dejan en NEGATIVO, lo que contablemente
+-- significaria que el banco 003 nos debe a nosotros -- una inconsistencia que
+-- ningun asiento posterior corrige solo. Ver 15-seed-nostro-funding.sql para el
+-- fondeo inicial, y monitorear el saldo con:
+--   SELECT current_balance FROM accounting.accounting_account
+--    WHERE account_code = '1.1.1.01';
 -- =============================================================================
 
 INSERT INTO accounting.accounting_rule (description, effective_from, effective_to, operation_type)
-SELECT 'Liquidacion Nostro saliente hacia banco corresponsal', DATE '2026-01-01', NULL, 'NOSTRO_SETTLEMENT_OUTBOUND'
+SELECT 'Liquidacion Nostro saliente hacia banco corresponsal (bilateral)', DATE '2026-01-01', NULL, 'NOSTRO_SETTLEMENT_OUTBOUND'
 WHERE NOT EXISTS (
     SELECT 1 FROM accounting.accounting_rule WHERE operation_type = 'NOSTRO_SETTLEMENT_OUTBOUND');
 
@@ -56,10 +68,23 @@ SELECT v.account_code, v.amount_component, v.line_order, v.movement_type, v.skip
 FROM accounting.accounting_rule r
 CROSS JOIN (VALUES
     ('2.4.0.01', 'PRINCIPAL', 1, 'DEBITO',  true),
-    ('1.1.0.01', 'PRINCIPAL', 2, 'CREDITO', true)
+    ('1.1.1.01', 'PRINCIPAL', 2, 'CREDITO', true)
 ) AS v(account_code, amount_component, line_order, movement_type, skip_if_zero)
 WHERE r.operation_type = 'NOSTRO_SETTLEMENT_OUTBOUND'
   AND NOT EXISTS (SELECT 1 FROM accounting.accounting_rule_line l WHERE l.rule_id = r.id);
+
+-- Correccion para entornos donde esta regla ya se creo con la version anterior
+-- del script, que acreditaba 1.1.0.01 (camara) en vez de 1.1.1.01 (Nostro). Los
+-- INSERT de arriba llevan NOT EXISTS, asi que por si solos NO actualizan una
+-- regla preexistente: sin este UPDATE, un entorno ya inicializado se quedaria
+-- liquidando contra camara.
+UPDATE accounting.accounting_rule_line l
+   SET account_code = '1.1.1.01'
+  FROM accounting.accounting_rule r
+ WHERE r.id = l.rule_id
+   AND r.operation_type = 'NOSTRO_SETTLEMENT_OUTBOUND'
+   AND l.line_order = 2
+   AND l.account_code = '1.1.0.01';
 
 
 -- =============================================================================
